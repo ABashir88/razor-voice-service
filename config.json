@@ -1,0 +1,54 @@
+{
+  "bluetooth": {
+    "deviceName": "X8 Pro",
+    "macAddress": "1c-2c-e0-05-1a-84",
+    "fallbackOutput": "Mac mini Speakers",
+    "outputOverride": "Mac mini Speakers",
+    "maxRetries": 1,
+    "monitorIntervalMs": 60000
+  },
+  "telnyx": {
+    "sttEndpoint": "https://api.telnyx.com/v2/ai/audio/transcriptions",
+    "ttsEndpoint": "https://api.telnyx.com/v2/text-to-speech/speech",
+    "sttModel": "distil-whisper/distil-large-v2",
+    "ttsVoice": "Telnyx.KokoroTTS.am_onyx",
+    "ttsVoiceFallback": "Telnyx.NaturalHD.orion",
+    "ttsMaxChars": 950
+  },
+  "gateway": {
+    "host": "127.0.0.1",
+    "port": 18789,
+    "configPath": "/Users/alrazibashir/.openclaw/openclaw.json"
+  },
+  "wakeword": {
+    "builtinKeyword": "JARVIS",
+    "customModelPath": null,
+    "sensitivity": 0.6,
+    "interruptThreshold": 500,
+    "interruptDebounce": 3
+  },
+  "audio": {
+    "sampleRate": 16000,
+    "channels": 1,
+    "bitDepth": 16,
+    "maxRecordSecs": 60,
+    "reverbBufferMs": 300
+  },
+  "http": {
+    "port": 3457,
+    "bind": "127.0.0.1"
+  },
+  "proactive": {
+    "silenceAlertMinutes": 90,
+    "paceCheckAfterHour": 14,
+    "meetingPrepMinutes": 10,
+    "dealDarkDays": 5,
+    "pulseIntervalMinutes": 15,
+    "calendarCheckMinutes": 30
+  },
+  "targets": {
+    "dailyCalls": 20,
+    "dailyEmails": 15,
+    "weeklyMeetings": 6
+  }
+}

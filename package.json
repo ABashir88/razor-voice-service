@@ -1,0 +1,34 @@
+{
+  "name": "razor-voice-service",
+  "version": "1.0.0",
+  "description": "Razor Voice Agent – always-listening wake-word activated voice pipeline",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test:state": "node tests/stateMachine.test.js",
+    "test:memory": "node tests/memory.test.js",
+    "test:integrations": "node tests/integrations.test.js",
+    "test:mic": "node src/utils/test-mic.js",
+    "test:playback": "node src/utils/test-playback.js",
+    "test:bluetooth": "node src/utils/test-bluetooth.js",
+    "setup": "node src/utils/setup.js",
+    "oauth": "node scripts/oauth-setup.js"
+  },
+  "dependencies": {
+    "@picovoice/porcupine-node": "^3.0.2",
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
+    "eventemitter3": "^5.0.1",
+    "googleapis": "^144.0.0",
+    "jsforce": "^1.11.1",
+    "node-record-lpcm16": "^1.0.1",
+    "open": "^10.2.0",
+    "uuid": "^9.0.1",
+    "ws": "^8.16.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

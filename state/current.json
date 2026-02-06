@@ -1,0 +1,15 @@
+{
+  "current": "ACTIVE",
+  "previous": "CLOSING",
+  "enteredAt": 1770258433918,
+  "stats": {
+    "callsToday": 0,
+    "emailsToday": 0,
+    "meetingsBooked": 0,
+    "lastCallTime": null,
+    "lastEmailTime": null,
+    "dayStarted": null,
+    "lastActivity": 1770257069735
+  },
+  "queuedAlerts": []
+}
