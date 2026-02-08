@@ -7,7 +7,7 @@ import { getEnabledIntegrations } from './config.js';
 import { createSalesloftClient } from './salesloft.js';
 import { createSalesforceClient } from './salesforce.js';
 import { createGoogleClient } from './google.js';
-import { createFellowClient } from './fellow-mcp.js';
+import { createFellowClient } from './fellow.js';
 import { createBraveSearchClient } from './brave-search.js';
 
 const log = makeLogger('IntegrationManager');
@@ -173,7 +173,12 @@ export class IntegrationManager extends EventEmitter {
       safe('sf.searchContacts', () => this.salesforce?.searchContacts(name)),
       safe('sl.getPeople', () => this.salesloft?.getPeople(name)),
       safe('gmail.search', () => this.google?.getRecentEmails(`from:${name} OR to:${name}`, 5)),
-      safe('fellow.search', () => this.fellow?.searchNotes(name)),
+      safe('fellow.search', () => {
+        if (this.fellow && typeof this.fellow.searchNotes === 'function') {
+          return this.fellow.searchNotes(name);
+        }
+        return null;
+      }),
     ]);
 
     const context = {

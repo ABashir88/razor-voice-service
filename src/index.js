@@ -760,6 +760,9 @@ function updateConversationContext(actionName, rawData, formattedText) {
 // ══════════════════════════════════════════════════════════════════════════
 
 async function handleCommand({ text, source }) {
+  const _cmdStartMs = Date.now();
+  const _isFollowUp = source === 'streaming-stt' && !source.includes('wake');
+
   log.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   log.info(`  📝 "${text}"`);
   log.info(`  Source: ${source}`);
@@ -791,7 +794,7 @@ async function handleCommand({ text, source }) {
       // Inject resolved action into processing
       const result = await dispatchAction({ action: followUpResult.action, params: followUpResult.params || {} });
       if (result) {
-        const formatted = formatDataForSpeech(followUpResult.action, result);
+        const formatted = humanizeResponse(formatDataForSpeech(followUpResult.action, result));
         updateConversationContext(followUpResult.action, result, formatted);
         memory.addTurn("assistant", formatted, { contextResolved: true });
         await pipeline.speak(formatted, { pace: "calm" });
@@ -809,6 +812,9 @@ async function handleCommand({ text, source }) {
       });
 
       let speakText = extractSpeakableText(response.text);
+      if (pipeline._userStoppedAt) {
+        log.info(`[Latency] Brain responded at ${Date.now()} — ${Date.now() - pipeline._userStoppedAt}ms after user stopped`);
+      }
       log.info(`Brain response (${response.latency_ms}ms): "${speakText.slice(0, 80)}${speakText.length > 80 ? '...' : ''}"`);
 
       // ── Separate data-fetching actions from fire-and-forget ──
@@ -838,13 +844,15 @@ async function handleCommand({ text, source }) {
         );
 
         const fetched = results.filter(r => r.result != null);
+        const failedCount = dataActions.length - fetched.length;
+        if (failedCount > 0) pipeline._sessionStats.actionsFailed += failedCount;
         if (fetched.length > 0) {
           const dataSummary = fetched
             .map(r => formatDataForSpeech(r.action, r.result))
             .filter(Boolean)
             .join(' ');
           if (dataSummary) {
-            speakText = dataSummary;
+            speakText = humanizeResponse(dataSummary);
             log.info(`Data response: "${speakText.slice(0, 80)}${speakText.length > 80 ? '...' : ''}"`);
             // Update conversation context with fetched data
             fetched.forEach(r => updateConversationContext(r.action, r.result, formatDataForSpeech(r.action, r.result)));
@@ -881,9 +889,15 @@ async function handleCommand({ text, source }) {
       
       if (!speakText) {
         log.info("Skipping TTS — empty or placeholder response after cleaning");
+        pipeline._sessionStats.silentResponses++;
         sm.transition(States.LISTENING, "empty_response");
         return;
       }
+
+      // ── [Humanness] Naturalness score ──
+      const { score: natScore, issues: natIssues } = scoreNaturalness(speakText);
+      const natEmoji = natScore >= 8 ? '🟢' : natScore >= 5 ? '🟡' : '🔴';
+      log.info(`[Humanness] ${natEmoji} Score: ${natScore}/10 | ${natIssues.join(', ')} | "${speakText.slice(0, 80)}..."`);
 
       // Record brain turn in memory
       memory.addTurn('assistant', speakText, {
@@ -894,6 +908,15 @@ async function handleCommand({ text, source }) {
       // Speak the response
       const pace = determinePace(response);
       await pipeline.speak(speakText, { pace });
+
+      // ── [Session] Turn tracking ──
+      const responseTimeMs = Date.now() - _cmdStartMs;
+      const actionName = allActions.length > 0 ? allActions[0].action : 'no_action';
+      pipeline._sessionStats.turns++;
+      pipeline._sessionStats.totalResponseMs += responseTimeMs;
+      pipeline._sessionStats.actionsTriggered += allActions.length;
+      if (_isFollowUp) { pipeline._sessionStats.followUps++; } else { pipeline._sessionStats.wakeWords++; }
+      log.info(`[Session] Turn ${pipeline._sessionStats.turns}: "${text.slice(0, 40)}" → ${actionName} (${responseTimeMs}ms) ${_isFollowUp ? '↩️ follow-up' : '🎯 wake-word'}`);
 
       // If the brain detected entities, update semantic memory
       if (response.entities?.length > 0) {
@@ -1090,6 +1113,93 @@ function formatDataForSpeech(actionType, data) {
   if (data.text) return truncateForTTS(data.text);
 
   return null;
+}
+
+// ── Humanize data response text for natural-sounding TTS ──
+function humanizeResponse(text) {
+  if (!text) return text;
+
+  let r = text;
+
+  // "You have X hot leads" → more casual phrasing
+  r = r.replace(/^You have (\d+) hot leads?/i, (_, n) => {
+    const num = parseInt(n);
+    if (num === 0) return 'No hot leads right now';
+    if (num === 1) return 'Just one hot lead';
+    if (num <= 3) return `Got ${n} hot ones`;
+    return `You've got ${n} hot leads`;
+  });
+
+  // "You have X deal" → shorter
+  r = r.replace(/^You have (\d+) deal/i, (_, n) => {
+    return parseInt(n) === 1 ? 'One deal' : `${n} deals`;
+  });
+
+  // "including" → more natural connector
+  r = r.replace(/ including /, '. Top names: ');
+
+  // "with no activity in the last week" → shorter
+  r = r.replace(/with no activity in the last (\w+)/i, 'gone quiet this $1');
+
+  // "worth X thousand in total pipeline" → shorter
+  r = r.replace(/worth (\d+) thousand in total pipeline/i, 'totaling $1K in pipeline');
+
+  // Empty-result responses → casual
+  r = r.replace(/^No unread emails\.?$/i, 'Inbox is clean.');
+  r = r.replace(/^No open action items right now\.?$/i, 'Nothing on your plate from meetings.');
+  r = r.replace(/^No upcoming tasks this week\.?$/i, 'Clear schedule this week.');
+  r = r.replace(/^No deals closing this (\w+)\.?$/i, 'Nothing closing this $1.');
+  r = r.replace(/^No recent recordings to analyze\.?$/i, 'No recent calls to look at.');
+
+  // Clean up colons and double spaces before TTS
+  r = r.replace(/:\s*/g, ', ');
+  r = r.replace(/\s{2,}/g, ' ');
+
+  return r.trim();
+}
+
+// ── [Humanness] Score response naturalness before TTS ──
+function scoreNaturalness(text) {
+  if (!text || text.length < 2) return { score: 0, issues: ['empty'] };
+
+  const issues = [];
+  let score = 10;
+
+  // Too long for voice
+  const wordCount = text.split(/\s+/).length;
+  if (wordCount > 25) { score -= 2; issues.push(`too_long(${wordCount}w)`); }
+  if (wordCount > 40) { score -= 2; issues.push('way_too_long'); }
+
+  // Robotic openers
+  const roboticStarts = [/^I can help/i, /^I'd be happy/i, /^Certainly/i, /^Of course/i, /^Sure,? I/i, /^Let me help/i, /^Here are your/i];
+  for (const r of roboticStarts) {
+    if (r.test(text)) { score -= 2; issues.push('robotic_opener'); break; }
+  }
+
+  // Robotic closers
+  const roboticEnds = [/anything else\??$/i, /help you with\??$/i, /assist you\??$/i, /let me know\.?$/i];
+  for (const r of roboticEnds) {
+    if (r.test(text)) { score -= 2; issues.push('robotic_closer'); break; }
+  }
+
+  // Numbered lists
+  if (/\d+\.\s/.test(text)) { score -= 2; issues.push('numbered_list'); }
+
+  // No contractions (sounds formal)
+  if (/\b(You have|I will|That is|Here is|It is|I am|You are)\b/.test(text)) {
+    score -= 1; issues.push('no_contractions');
+  }
+
+  // Raw data artifacts
+  if (/:/.test(text)) { score -= 1; issues.push('has_colons'); }
+  if (/\|/.test(text)) { score -= 2; issues.push('has_pipes'); }
+  if (/null|undefined|NaN/i.test(text)) { score -= 3; issues.push('raw_data_leak'); }
+
+  // Good signs
+  if (/^(So|Alright|Got it|Here's the deal|Quick|Yeah|Oh)/i.test(text)) { score += 1; issues.push('+natural_opener'); }
+  if (/you've|they're|we're|it's|that's|here's|what's|who's/i.test(text)) { score += 1; issues.push('+has_contractions'); }
+
+  return { score: Math.max(0, Math.min(10, score)), issues };
 }
 
 // ── Determine speech pacing from brain response context ──

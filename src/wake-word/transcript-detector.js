@@ -18,6 +18,11 @@ import makeLogger from '../utils/logger.js';
 
 const log = makeLogger('WakeTranscript');
 
+// ── [WakeAccuracy] Running accuracy stats ──
+let _wakeAttempts = 0;
+let _wakeHits = 0;
+let _wakeMisses = [];
+
 class TranscriptWakeDetector extends EventEmitter {
   constructor() {
     super();
@@ -124,10 +129,19 @@ class TranscriptWakeDetector extends EventEmitter {
     // Check if transcript contains wake word
     const lower = transcript.toLowerCase();
 
-    // Match variations: "razor", "razer", "raze her", "raise or"
+    // Match variations: "razor" and common STT misrecognitions
     const wakePatterns = [
       this.wakeWord,
       'razer',
+      'razar',
+      'fraser',
+      'frazer',
+      'caesar',
+      'roger',
+      'laser',
+      'raiser',
+      'riser',
+      'rizar',
       'raze her',
       'raise or',
       'razor.',
@@ -148,6 +162,14 @@ class TranscriptWakeDetector extends EventEmitter {
 
       log.info(`🎯 Wake word detected! Pattern: "${foundPattern}", Command: "${command || '(waiting for command)'}"`);
 
+      // ── [WakeAccuracy] Track hit ──
+      _wakeAttempts++;
+      _wakeHits++;
+      log.info(`[WakeAccuracy] Heard: "${transcript}" | Matched: "${foundPattern}" | Duration: ${durationMs}ms`);
+      if (_wakeAttempts % 10 === 0) {
+        log.info(`[WakeAccuracy] ${_wakeHits}/${_wakeAttempts} (${Math.round(_wakeHits / _wakeAttempts * 100)}%) | Recent misses: ${_wakeMisses.slice(-3).join(', ') || 'none'}`);
+      }
+
       this.emit('wake', {
         transcript,
         command,
@@ -156,6 +178,14 @@ class TranscriptWakeDetector extends EventEmitter {
         durationMs,
       });
     } else {
+      // ── [WakeAccuracy] Track miss ──
+      _wakeAttempts++;
+      _wakeMisses.push(transcript);
+      log.info(`[WakeAccuracy] Heard: "${transcript}" | Matched: NONE | Duration: ${durationMs}ms`);
+      if (_wakeAttempts % 10 === 0) {
+        log.info(`[WakeAccuracy] ${_wakeHits}/${_wakeAttempts} (${Math.round(_wakeHits / _wakeAttempts * 100)}%) | Recent misses: ${_wakeMisses.slice(-3).join(', ')}`);
+      }
+
       log.debug(`No wake word found — discarding`);
       this.emit('reject', { transcript });
     }

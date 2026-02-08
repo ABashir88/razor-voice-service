@@ -113,27 +113,115 @@ def _check_quick_response(text: str) -> dict | None:
 import re as _re
 
 _ACTION_PATTERNS: list[tuple[_re.Pattern, dict]] = [
-    # Calendar
-    (_re.compile(r"\b(calendar|meetings?\s*today|schedule|free at|what.?s my (day|week)|am i (free|busy))", _re.I),
+    # ═══════════════════════════════════════════════════════════════════
+    # SALESFORCE
+    # ═══════════════════════════════════════════════════════════════════
+    (_re.compile(r"(pipeline|how much pipeline|my pipeline|quota)", _re.I),
+     {"action": "get_pipeline", "params": {}}),
+    (_re.compile(r"(biggest deal|largest deal|biggest opportunity)", _re.I),
+     {"action": "get_biggest_deal", "params": {}}),
+    (_re.compile(r"(stale deals?|deals? gone dark|neglected deals?|deals? at risk)", _re.I),
+     {"action": "get_stale_deals", "params": {}}),
+    (_re.compile(r"(closing this week|deals? closing this week|what.?s closing soon)", _re.I),
+     {"action": "get_deals_closing", "params": {"period": "this_week"}}),
+    (_re.compile(r"(closing this month|deals? closing this month)", _re.I),
+     {"action": "get_deals_closing", "params": {"period": "this_month"}}),
+    (_re.compile(r"(my tasks?|salesforce tasks?|sf tasks?)", _re.I),
+     {"action": "get_sf_tasks", "params": {}}),
+    (_re.compile(r"(upcoming tasks?|tasks? this week)", _re.I),
+     {"action": "get_upcoming_tasks", "params": {}}),
+    (_re.compile(r"decision maker", _re.I),
+     {"action": "get_decision_maker", "params": {}}),
+
+    # ═══════════════════════════════════════════════════════════════════
+    # SALESLOFT
+    # ═══════════════════════════════════════════════════════════════════
+    (_re.compile(r"(hot leads?|who.?s engaged|any hot prospects?|buying signals?)", _re.I),
+     {"action": "get_hot_leads", "params": {}}),
+    (_re.compile(r"(who opened|email opens?|who opened my emails?)", _re.I),
+     {"action": "get_email_opens", "params": {}}),
+    (_re.compile(r"(who clicked|email clicks?|who clicked my emails?|any clicks?)", _re.I),
+     {"action": "get_email_clicks", "params": {}}),
+    (_re.compile(r"(any replies?|who replied|replies)", _re.I),
+     {"action": "get_replies", "params": {}}),
+    (_re.compile(r"(activity stats?|my numbers?|how many calls|my activity)", _re.I),
+     {"action": "get_activity_stats", "params": {}}),
+    (_re.compile(r"(my cadences?|active cadences?)", _re.I),
+     {"action": "get_my_cadences", "params": {}}),
+
+    # ═══════════════════════════════════════════════════════════════════
+    # FELLOW
+    # ═══════════════════════════════════════════════════════════════════
+    (_re.compile(r"(my action items?|action items?|what are my action items?|to.?dos? from meetings?)", _re.I),
+     {"action": "get_action_items", "params": {}}),
+    (_re.compile(r"(overdue items?|overdue tasks?|any overdue)", _re.I),
+     {"action": "get_overdue_items", "params": {}}),
+    (_re.compile(r"(last meeting|how did my last call go|last meeting summary|last call)", _re.I),
+     {"action": "last_meeting", "params": {}}),
+    (_re.compile(r"(today.?s meetings?|meetings? today|what meetings? do i have)", _re.I),
+     {"action": "get_today_meetings", "params": {}}),
+    (_re.compile(r"(recent recordings?|recordings? this week|any recordings?)", _re.I),
+     {"action": "get_recordings", "params": {}}),
+    (_re.compile(r"(transcript|show transcript|last transcript)", _re.I),
+     {"action": "get_transcript", "params": {}}),
+    (_re.compile(r"(talk ratio|how much did i talk)", _re.I),
+     {"action": "get_talk_ratio", "params": {}}),
+
+    # ═══════════════════════════════════════════════════════════════════
+    # GOOGLE
+    # ═══════════════════════════════════════════════════════════════════
+    (_re.compile(r"(what.?s on my calendar|calendar|my schedule|meetings? this week)", _re.I),
      {"action": "check_calendar", "params": {"days": 1}}),
-    # Email
-    (_re.compile(r"\b(check.*(email|mail|inbox)|emails?\s*from|did.*reply|any.*(email|mail))", _re.I),
-     {"action": "check_email", "params": {"query": "", "max": 5}}),
-    # Pipeline / deals
-    (_re.compile(r"\b(pipeline|deals?\s*(closing|this|need)|how much.*(pipe|revenue)|hit.?quota|what deals)", _re.I),
-     {"action": "lookup_account", "params": {"name": "pipeline"}}),
-    # Research
-    (_re.compile(r"\b(search.*(web|for|news)|latest.*(news|on)|research|what does.*do\b)", _re.I),
-     {"action": "research", "params": {"query": ""}}),
-    # Task / reminder
-    (_re.compile(r"\b(remind me|create.*(task|reminder)|follow.?up.*(with|on).*\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|next))", _re.I),
-     {"action": "create_task", "params": {"subject": ""}}),
-    # Log call
-    (_re.compile(r"\b(log.*(call|meeting|activity)|record.*(call|meeting))", _re.I),
-     {"action": "log_call", "params": {"notes": ""}}),
-    # Meeting prep
-    (_re.compile(r"\b(prep me|prepare.*(for|me)|meeting prep)", _re.I),
+    (_re.compile(r"(check my email|any new emails?|unread emails?|check email)", _re.I),
+     {"action": "get_unread_emails", "params": {}}),
+    (_re.compile(r"(free slots?|am i free|when am i free)", _re.I),
+     {"action": "find_free_time", "params": {}}),
+
+    # ═══════════════════════════════════════════════════════════════════
+    # OTHER
+    # ═══════════════════════════════════════════════════════════════════
+    (_re.compile(r"remind me", _re.I),
+     {"action": "create_reminder", "params": {}}),
+    (_re.compile(r"(log.*(call|meeting|activity)|record.*(call|meeting))", _re.I),
+     {"action": "log_call", "params": {}}),
+    (_re.compile(r"(prep me|prepare.*(for|me)|meeting prep)", _re.I),
      {"action": "meeting_prep", "params": {}}),
+    (_re.compile(r"(search.*(web|for)|research)", _re.I),
+     {"action": "research", "params": {"query": ""}}),
+
+    # ═══════════════════════════════════════════════════════════════════
+    # FELLOW — additional patterns
+    # ═══════════════════════════════════════════════════════════════════
+    (_re.compile(r"talk(?:ing)?\s*ratio|how much (?:did I|am I) talk", _re.I),
+     {"action": "get_talk_ratio", "params": {}}),
+    (_re.compile(r"action items?|to.?dos?|my tasks from meetings?", _re.I),
+     {"action": "get_action_items", "params": {}}),
+    (_re.compile(r"last (?:meeting|call)|how (?:did|was) my (?:last )?call", _re.I),
+     {"action": "last_meeting", "params": {}}),
+    (_re.compile(r"recent recordings?|call recordings?|my recordings?", _re.I),
+     {"action": "get_recordings", "params": {}}),
+
+    # ═══════════════════════════════════════════════════════════════════
+    # GOOGLE — additional patterns
+    # ═══════════════════════════════════════════════════════════════════
+    (_re.compile(r"my schedule|what(?:'s| is) on (?:my )?(?:calendar|schedule)|meetings? today", _re.I),
+     {"action": "check_calendar", "params": {}}),
+    (_re.compile(r"unread (?:email|mail)s?|new (?:email|mail)s?", _re.I),
+     {"action": "get_unread_emails", "params": {}}),
+
+    # ═══════════════════════════════════════════════════════════════════
+    # SALESFORCE — additional patterns
+    # ═══════════════════════════════════════════════════════════════════
+    (_re.compile(r"(?:deals?|opportunities?) (?:gone )?(?:dark|cold|stale|quiet|overdue|stuck)|(?:stale|overdue|stuck) deals?", _re.I),
+     {"action": "get_stale_deals", "params": {}}),
+    (_re.compile(r"(?:deals?|opportunities?) closing|closing (?:this |next )?(?:week|month)", _re.I),
+     {"action": "get_deals_closing", "params": {}}),
+
+    # ═══════════════════════════════════════════════════════════════════
+    # SALESLOFT — additional patterns
+    # ═══════════════════════════════════════════════════════════════════
+    (_re.compile(r"who(?:'s| has| is)? (?:opened|engaged|active|responding)", _re.I),
+     {"action": "get_email_opens", "params": {}}),
 ]
 
 # Contact lookup — checked last because it's broad (any "look up X" or "find X")
@@ -360,8 +448,13 @@ class BrainEngine:
                 actions = parsed.get("actions", [])
                 state = parsed.get("state", "listening")
             else:
-                logger.warning("Claude response was not JSON, using raw text")
-                brain_text = response_text
+                logger.warning(
+                    "Claude response was not JSON, using raw text: %s",
+                    response_text[:200],
+                )
+                # Use Claude's actual text (truncated for voice), not a placeholder
+                raw = response_text.strip()
+                brain_text = raw[:200] if raw else "I didn't catch that. Try again?"
                 intent = "question"
                 entities = []
                 actions = []

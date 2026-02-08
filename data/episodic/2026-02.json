@@ -587,6 +587,54 @@
       "commitments": [],
       "tags": [],
       "turnCount": 30
+    },
+    {
+      "id": "ep_mld9h1gf_9rvk4i",
+      "date": "2026-02-08T04:44:28.452Z",
+      "timestamp": 1770525868452,
+      "topic": "voice_interaction",
+      "outcome": "shutdown",
+      "summary": "System shutdown during conversation",
+      "keyFacts": [],
+      "commitments": [],
+      "tags": [],
+      "turnCount": 17
+    },
+    {
+      "id": "ep_mldajjtx_lmlh2x",
+      "date": "2026-02-08T04:58:35.871Z",
+      "timestamp": 1770526715871,
+      "topic": "voice_interaction",
+      "outcome": "shutdown",
+      "summary": "System shutdown during conversation",
+      "keyFacts": [],
+      "commitments": [],
+      "tags": [],
+      "turnCount": 50
+    },
+    {
+      "id": "ep_mldbz9lq_3wuoyx",
+      "date": "2026-02-08T05:52:14.741Z",
+      "timestamp": 1770529934741,
+      "topic": "voice_interaction",
+      "outcome": "shutdown",
+      "summary": "System shutdown during conversation",
+      "keyFacts": [],
+      "commitments": [],
+      "tags": [],
+      "turnCount": 36
+    },
+    {
+      "id": "ep_mldcklqd_q2g07i",
+      "date": "2026-02-08T06:08:12.574Z",
+      "timestamp": 1770530892574,
+      "topic": "voice_interaction",
+      "outcome": "shutdown",
+      "summary": "System shutdown during conversation",
+      "keyFacts": [],
+      "commitments": [],
+      "tags": [],
+      "turnCount": 40
     }
   ]
 }

@@ -85,6 +85,23 @@ class VoicePipeline extends EventEmitter {
     this._audioRingMaxMs = 3000;
     this._wakeTimestamp = 0;
 
+    // ── Latency tracking for [Latency] / [Humanness] logs ──
+    this._userStoppedAt = 0;
+    this._ackPlayedAt = 0;
+
+    // ── Session stats for [Session] logs ──
+    this._sessionStats = {
+      turns: 0,
+      wakeWords: 0,
+      followUps: 0,
+      silentResponses: 0,
+      avgResponseMs: 0,
+      totalResponseMs: 0,
+      actionsTriggered: 0,
+      actionsFailed: 0,
+      fellbackToPattern: 0,
+    };
+
     // ── Bridge state machine transitions to pipeline events ──
     // so index.js and other modules can subscribe via either interface
     this.sm.on('transition', (record) => {
@@ -178,6 +195,7 @@ class VoicePipeline extends EventEmitter {
         followUpMode.consume();
         attention.activity();
         this.sm.transition(States.PROCESSING, 'attention_follow_up');
+        this.playAck('quick');
         this.captureCommand();
       }
     });
@@ -307,6 +325,20 @@ class VoicePipeline extends EventEmitter {
     }
 
     this.sm.transition(States.IDLE, 'pipeline_stop');
+
+    // ── [Session] Summary on shutdown ──
+    const s = this._sessionStats;
+    if (s.turns > 0) {
+      log.info('[Session] ═══════════════════════════════════════');
+      log.info('[Session] SESSION SUMMARY');
+      log.info(`[Session]   Turns: ${s.turns} (${s.wakeWords} wake + ${s.followUps} follow-up)`);
+      log.info(`[Session]   Actions: ${s.actionsTriggered} triggered, ${s.actionsFailed} failed`);
+      log.info(`[Session]   Fallbacks: ${s.fellbackToPattern} pattern rescues`);
+      log.info(`[Session]   Silent: ${s.silentResponses} empty responses`);
+      log.info(`[Session]   Avg response: ${Math.round(s.totalResponseMs / s.turns)}ms`);
+      log.info('[Session] ═══════════════════════════════════════');
+    }
+
     log.info('Voice pipeline stopped');
   }
 
@@ -365,7 +397,7 @@ class VoicePipeline extends EventEmitter {
   // Ring buffer replay includes "Razor" audio, so Deepgram transcribes it.
   // We strip it to get just the command.
   _stripWakeWord(text) {
-    return text.replace(/^(hey\s+)?(razor|razer|raze her|raise or|raiser)[.,!?\s]*/i, '').trim();
+    return text.replace(/^(hey\s+)?(razor|razer|razar|fraser|frazer|caesar|roger|laser|raiser|riser|rizar|raze her|raise or)[.,!?\s]*/i, '').trim();
   }
 
   // ── Handle wake word detection ──
@@ -383,8 +415,8 @@ class VoicePipeline extends EventEmitter {
     attention.wake('wake_word');
     followUpMode.exit();
 
-    // Ack disabled — was causing double-voice overlap with TTS
-    // this.playAck('quick');
+    // Play ack so user knows we heard them (killed before real TTS in speak())
+    this.playAck('quick');
 
     this.sm.transition(States.PROCESSING, 'wake_word');
 
@@ -392,6 +424,8 @@ class VoicePipeline extends EventEmitter {
     if (command && command.length > 2) {
       if (this._isCommandComplete(command)) {
         log.info(`Complete command from wake transcript: "${command}"`);
+        this._userStoppedAt = Date.now();
+        log.info(`[Latency] User stopped speaking at ${this._userStoppedAt}`);
         this.emit('command', {
           text: command,
           source: 'wake-transcript',
@@ -429,7 +463,9 @@ class VoicePipeline extends EventEmitter {
       if (done) return;
       done = true;
       const commandText = getFullCommand();
+      this._userStoppedAt = Date.now();
       log.info(`Command captured: "${commandText}"`);
+      log.info(`[Latency] User stopped speaking at ${this._userStoppedAt}`);
       attention.activity();
       this.cleanupCommandCapture();
       this.emit('command', { text: commandText, source });
@@ -557,6 +593,11 @@ class VoicePipeline extends EventEmitter {
     // Just reset VAD to prevent the tone from triggering speech detection.
     this.vad.reset();
 
+    this._ackPlayedAt = Date.now();
+    if (this._userStoppedAt) {
+      log.info(`[Latency] Ack started at ${this._ackPlayedAt} — ${this._ackPlayedAt - this._userStoppedAt}ms after user stopped`);
+    }
+
     let settled = false;
     this._ackDone = new Promise((resolve) => {
       const settle = () => {
@@ -602,6 +643,15 @@ class VoicePipeline extends EventEmitter {
     }
 
     this.sm.transition(States.SPEAKING, 'tts_start');
+
+    // ── [Humanness] Latency summary ──
+    if (this._userStoppedAt) {
+      const now = Date.now();
+      const totalWait = now - this._userStoppedAt;
+      const ackDelay = this._ackPlayedAt > this._userStoppedAt ? this._ackPlayedAt - this._userStoppedAt : -1;
+      log.info(`[Latency] TTS started at ${now} — ${totalWait}ms total wait`);
+      log.info(`[Humanness] Total wait: ${totalWait}ms | Ack: ${ackDelay}ms | TTS: ${totalWait}ms`);
+    }
 
     try {
       const result = await this.tts.synthesize(text, { pace });

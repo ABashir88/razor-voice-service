@@ -43,6 +43,36 @@ import makeLogger from '../utils/logger.js';
 const execFileAsync = promisify(execFile);
 const log = makeLogger('TTS');
 
+// ── [TTS-QA] Flag issues in text before it reaches the speaker ──
+function flagTTSIssues(text) {
+  const issues = [];
+
+  // Abbreviations that TTS will mispronounce
+  const abbrevs = text.match(/\b[A-Z]{2,}\b/g) || [];
+  if (abbrevs.length) issues.push(`abbreviations: ${abbrevs.join(', ')}`);
+
+  // URLs or email addresses
+  if (/https?:\/\/|www\.|\.com|\.io|@\w+\.\w+/.test(text)) issues.push('contains_url_or_email');
+
+  // Small numbers as digits (should be words for natural speech)
+  const nums = text.match(/\b\d+\b/g) || [];
+  const smallNums = nums.filter(n => parseInt(n) <= 10);
+  if (smallNums.length) issues.push(`small_numbers_as_digits: ${smallNums.join(', ')}`);
+
+  // Brackets/parens read aloud weirdly
+  if (/[[\](){}]/.test(text)) issues.push('brackets_or_parens');
+
+  // Double spaces, code punctuation
+  if (/\s{2,}/.test(text)) issues.push('double_spaces');
+  if (/[;|\\]/.test(text)) issues.push('code_punctuation');
+
+  // Estimated duration check
+  const duration = text.split(/\s+/).length * 0.4;
+  if (duration > 12) issues.push(`est_duration: ${duration.toFixed(1)}s (>12s is too long)`);
+
+  return issues;
+}
+
 class TtsEngine {
   constructor() {
     this.provider = this._resolveProvider();
@@ -196,6 +226,12 @@ class TtsEngine {
 
     const paceConfig = config.pacing[pace] || config.pacing.normal;
     log.info(`Synthesizing (${this.provider}, pace=${pace}): "${text.slice(0, 80)}${text.length > 80 ? '...' : ''}"`);
+
+    // ── [TTS-QA] Pre-flight check for issues that sound bad ──
+    const ttsIssues = flagTTSIssues(text);
+    if (ttsIssues.length) {
+      log.warn(`[TTS-QA] Issues: ${ttsIssues.join(' | ')}`);
+    }
 
     const start = Date.now();
 
