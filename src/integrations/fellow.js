@@ -321,9 +321,9 @@ export class FellowClient {
   async getActionItems(opts = {}) {
     const filters = { archived: false };
 
-    // Status filter
-    if (opts.status === 'open') filters.completed = false;
-    else if (opts.status === 'completed') filters.completed = true;
+    // Status filter — 'overdue' is handled client-side after fetch
+    if (opts.status === 'completed') filters.completed = true;
+    else if (opts.status !== 'all') filters.completed = false; // default: open
 
     // Assignee scope
     if (opts.assignee === 'me') filters.scope = 'assigned_to_me';
@@ -340,8 +340,26 @@ export class FellowClient {
     };
 
     const maxPages = opts.limit ? Math.ceil(opts.limit / 50) : 5;
-    const items = await this._paginate('action_items', body, maxPages);
-    return opts.limit ? items.slice(0, opts.limit) : items;
+    let items = await this._paginate('action_items', body, maxPages);
+
+    // Client-side overdue filter
+    if (opts.status === 'overdue') {
+      const now = new Date();
+      items = items.filter(item => item.due_date && new Date(item.due_date) < now);
+    }
+
+    // Sort: overdue first, then by due date (soonest first), then newest
+    const now = new Date();
+    items.sort((a, b) => {
+      const aOverdue = a.due_date && new Date(a.due_date) < now ? 1 : 0;
+      const bOverdue = b.due_date && new Date(b.due_date) < now ? 1 : 0;
+      if (aOverdue !== bOverdue) return bOverdue - aOverdue;
+      if (a.due_date && b.due_date) return new Date(a.due_date) - new Date(b.due_date);
+      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+    });
+
+    const limit = opts.limit || 250; // default: return all (capped at pagination)
+    return items.slice(0, limit);
   }
 
   /**

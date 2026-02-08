@@ -17,6 +17,7 @@ import { getStateMachine, States } from './state/stateMachine.js';
 import { getConversationContext } from "./context/conversation-context.js";
 import { queryCache } from './intelligence/query-cache.js';
 import { morningBriefing } from './intelligence/morning-briefing.js';
+import { priorityEngine } from './intelligence/priorities.js';
 import makeLogger from './utils/logger.js';
 import speechLogger from "./utils/speech-logger.js";
 
@@ -80,6 +81,8 @@ const DATA_FETCH_ACTIONS = new Set([
   'get_upcoming_tasks', 'upcoming_tasks',
   // Morning briefing
   'morning_briefing', 'daily_briefing', 'give_briefing',
+  // Priority engine
+  'get_priorities',
   // Google Calendar & Email
   'get_upcoming_events', 'whats_on_calendar', 'my_calendar', 'meetings_this_week',
   'find_free_time', 'am_i_free', 'free_slots',
@@ -101,6 +104,11 @@ async function dispatchAction(action) {
         // Assemble and return text — let normal data response flow speak it
         const briefText = await morningBriefing.assemble();
         return briefText || 'Nothing to report this morning.';
+      }
+
+      case 'get_priorities': {
+        const summary = await priorityEngine.getPriorities();
+        return summary;
       }
 
       case 'search_contact':
@@ -404,9 +412,15 @@ async function dispatchAction(action) {
       case 'am_i_free':
       case 'free_slots': {
         if (integrations.google) {
-          const slots = await integrations.google.findFreeSlots(params.start, params.end, params.duration || 30);
-          if (!slots?.length) return "No free slots found.";
-          return `Found ${slots.length} free slot${slots.length > 1 ? "s" : ""} and the first one is at ${slots[0].start}`;
+          try {
+            const slots = await integrations.google.findFreeSlots(params.start, params.end, params.duration || 30);
+            if (!slots?.length) return "No free slots today.";
+            const firstTime = new Date(slots[0].start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            return `${slots.length} free slot${slots.length > 1 ? "s" : ""} today. First one starts at ${firstTime}`;
+          } catch (err) {
+            log.warn('findFreeSlots failed:', err.message);
+            return "Couldn't check free time right now. Try asking for your calendar instead.";
+          }
         }
         return "Google not connected.";
       }
@@ -482,10 +496,13 @@ async function dispatchAction(action) {
       case 'my_action_items':
       case 'action_items': {
         if (integrations.fellow) {
-          const items = await integrations.fellow.getMyActionItems();
-          if (!items?.length) return "No open action items right now.";
-          const top3 = items.slice(0, 3).map(i => i.title || i.text).join(" and ");
-          return `You have ${items.length} action item${items.length > 1 ? "s" : ""} including ${top3}`;
+          const limit = params.limit || 5;
+          const status = params.status || 'open';
+          const items = await integrations.fellow.getActionItems({ limit, status, assignee: 'me' });
+          if (!items?.length) return status === 'overdue' ? "Nothing overdue. You're all caught up." : "No open action items right now.";
+          const totalItems = await integrations.fellow.getMyActionItems();
+          const totalCount = totalItems?.length || items.length;
+          return _formatActionItems(items, totalCount);
         }
         return "Fellow not connected.";
       }
@@ -493,10 +510,9 @@ async function dispatchAction(action) {
       case 'get_overdue_items':
       case 'overdue_tasks': {
         if (integrations.fellow) {
-          const items = await integrations.fellow.getOverdueItems();
-          if (!items?.length) return "Nothing overdue. You are all caught up.";
-          const top3 = items.slice(0, 3).map(i => i.title || i.text).join(" and ");
-          return `You have ${items.length} overdue item${items.length > 1 ? "s" : ""} including ${top3}`;
+          const items = await integrations.fellow.getActionItems({ status: 'overdue', limit: 5, assignee: 'me' });
+          if (!items?.length) return "Nothing overdue. You're all caught up.";
+          return _formatActionItems(items, items.length);
         }
         return "Fellow not connected.";
       }
@@ -1078,6 +1094,31 @@ function truncateForTTS(text, maxChars = 120) {
   return (lastSpace > 20 ? cut.slice(0, lastSpace) : cut) + '.';
 }
 
+// ── Format action items into voice-friendly list ──
+function _formatActionItems(items, totalCount) {
+  if (!items?.length) return "No open action items.";
+
+  const parts = [];
+
+  // Header with total
+  if (totalCount > items.length) {
+    parts.push(`Top ${items.length} of ${totalCount} action items.`);
+  } else {
+    parts.push(`${items.length} action item${items.length > 1 ? 's' : ''}.`);
+  }
+
+  // List each item briefly
+  const now = new Date();
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const title = (item.title || item.text || 'Untitled').slice(0, 50);
+    const overdue = item.due_date && new Date(item.due_date) < now ? ', overdue' : '';
+    parts.push(`${i + 1}. ${title}${overdue}`);
+  }
+
+  return parts.join(' ');
+}
+
 // ── Shorten a calendar event name to first 3 words max ──
 function shortName(str) {
   if (!str) return 'Meeting';
@@ -1104,8 +1145,8 @@ function fmtTime(e) {
 function formatDataForSpeech(actionType, data) {
   if (!data) return null;
 
-  // Briefings are pre-curated for TTS — no truncation needed
-  if (actionType === 'morning_briefing' || actionType === 'daily_briefing' || actionType === 'give_briefing') {
+  // Briefings and priorities are pre-curated for TTS — no truncation needed
+  if (actionType === 'morning_briefing' || actionType === 'daily_briefing' || actionType === 'give_briefing' || actionType === 'get_priorities') {
     return typeof data === 'string' ? data : data.text || null;
   }
 
@@ -1530,6 +1571,9 @@ async function main() {
 
   // Start morning briefing scheduler (8:30 AM weekdays)
   morningBriefing.start(pipeline, integrations);
+
+  // Initialize priority engine
+  priorityEngine.init(integrations);
 
   log.info('');
   log.info('┌─────────────────────────────────────────┐');

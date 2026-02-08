@@ -192,11 +192,23 @@ _ACTION_PATTERNS: list[tuple[_re.Pattern, dict]] = [
      {"action": "research", "params": {"query": ""}}),
 
     # ═══════════════════════════════════════════════════════════════════
-    # FELLOW — additional patterns
+    # COMPOSITE — Priority Engine
+    # ═══════════════════════════════════════════════════════════════════
+    (_re.compile(r"what should i (?:be doing|do|focus on|work on)", _re.I),
+     {"action": "get_priorities", "params": {}}),
+    (_re.compile(r"what(?:'s| is) (?:my priority|on my plate|needs? attention)", _re.I),
+     {"action": "get_priorities", "params": {}}),
+    (_re.compile(r"priorit(?:y|ies)", _re.I),
+     {"action": "get_priorities", "params": {}}),
+    (_re.compile(r"what(?:'s| is) (?:important|urgent)", _re.I),
+     {"action": "get_priorities", "params": {}}),
+
+    # ═══════════════════════════════════════════════════════════════════
+    # FELLOW — additional patterns (broader matching)
     # ═══════════════════════════════════════════════════════════════════
     (_re.compile(r"talk(?:ing)?\s*ratio|how much (?:did I|am I) talk", _re.I),
      {"action": "get_talk_ratio", "params": {}}),
-    (_re.compile(r"action items?|to.?dos?|my tasks from meetings?", _re.I),
+    (_re.compile(r"action items?|to.?dos?|(?:my |are my )?tasks(?:\s|$|\?|\.)", _re.I),
      {"action": "get_action_items", "params": {}}),
     (_re.compile(r"last (?:meeting|call)|how (?:did|was) my (?:last )?call", _re.I),
      {"action": "last_meeting", "params": {}}),
@@ -220,9 +232,13 @@ _ACTION_PATTERNS: list[tuple[_re.Pattern, dict]] = [
      {"action": "get_deals_closing", "params": {}}),
 
     # ═══════════════════════════════════════════════════════════════════
-    # SALESLOFT — additional patterns
+    # SALESLOFT — additional patterns (broader matching)
     # ═══════════════════════════════════════════════════════════════════
     (_re.compile(r"who(?:'s| has| is)? (?:opened|engaged|active|responding)", _re.I),
+     {"action": "get_email_opens", "params": {}}),
+    (_re.compile(r"(?:there|are there|any) (?:clicks?|opens?)", _re.I),
+     {"action": "get_email_clicks", "params": {}}),
+    (_re.compile(r"email (?:activity|engagement)", _re.I),
      {"action": "get_email_opens", "params": {}}),
 ]
 

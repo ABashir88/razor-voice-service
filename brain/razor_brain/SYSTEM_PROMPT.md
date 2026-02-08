@@ -48,8 +48,9 @@ You are Razor, {{USER_NAME}}'s AI sales partner{{USER_COMPANY}}. Not an assistan
 ### FELLOW — Meetings & Coaching
 | User says | Action to emit |
 |-----------|----------------|
-| "my action items", "action items", "what are my action items", "to-dos from meetings" | {"action":"get_action_items","params":{}} |
-| "overdue items", "overdue tasks", "any overdue" | {"action":"get_overdue_items","params":{}} |
+| "my action items", "action items", "what are my action items", "to-dos from meetings" | {"action":"get_action_items","params":{"limit":5}} |
+| "top 3 action items", "top 10 tasks" | {"action":"get_action_items","params":{"limit":3}} (extract N from "top N") |
+| "overdue items", "overdue tasks", "any overdue" | {"action":"get_action_items","params":{"status":"overdue","limit":5}} |
 | "last meeting", "how did my last call go", "last meeting summary" | {"action":"last_meeting","params":{}} |
 | "today's meetings", "meetings today", "what meetings do I have" | {"action":"get_today_meetings","params":{}} |
 | "recent recordings", "recordings this week", "any recordings" | {"action":"get_recordings","params":{}} |
@@ -70,6 +71,11 @@ You are Razor, {{USER_NAME}}'s AI sales partner{{USER_COMPANY}}. Not an assistan
 |-----------|----------------|
 | "look up [name]", "find [name]", "[name]'s info" | {"action":"lookup_contact","params":{"name":"[name]"}} |
 | "look up [company]", "[company] info" | {"action":"lookup_account","params":{"name":"[company]"}} |
+
+### COMPOSITE — Priority View
+| User says | Action to emit |
+|-----------|----------------|
+| "what should I be doing", "what's my priority", "what needs attention", "what's on my plate" | {"action":"get_priorities","params":{}} |
 
 ### OTHER
 | User says | Action to emit |

@@ -35,7 +35,6 @@ import TtsEngine from '../tts/tts-engine.js';
 import InterruptionHandler from './interruption-handler.js';
 import { attention } from './attention.js';
 import { followUpMode } from './follow-up-mode.js';
-import { ackPlayer } from '../audio/ack-player.js';
 import { fillerPlayer } from '../audio/filler-player.js';
 import { getStateMachine, States } from '../state/stateMachine.js';
 import { userState } from '../state/user-state.js';
@@ -143,23 +142,13 @@ class VoicePipeline extends EventEmitter {
     this.wakeType = type;
     this.wakeDetector = detector;
 
-    // 3. Preload acknowledgment audio (TTS-generated acks in assets/acks/)
-    log.info('→ Preloading ack audio...');
-    await ackPlayer.preload();
-
-    // 4. Load STT correction memory
+    // 3. Load STT correction memory
     log.info('→ Loading STT corrections...');
     sttCorrections.load();
 
-    // 5. Preload filler phrases (natural thinking sounds)
+    // 4. Preload filler phrases (Telnyx armon voice — same as responses)
     log.info('→ Preloading filler phrases...');
     await fillerPlayer.preload();
-
-    // 5. Fallback: generate macOS say acks if no TTS acks available
-    if (!ackPlayer.ready) {
-      log.info('→ No TTS acks found — generating fallback ack tones...');
-      await this.tts.warmup();
-    }
 
     // 5. Wire up events
     this.wireEvents();
@@ -647,47 +636,6 @@ class VoicePipeline extends EventEmitter {
     }
   }
 
-  // ── Play a short acknowledgment (does NOT mute mic) ──
-  // Mic stays live so the audio ring buffer captures one-breath commands.
-  // Uses AckPlayer (TTS-generated) with fallback to old warmup acks.
-  playAck(context = 'quick') {
-    // Prefer AckPlayer TTS-generated files, fall back to warmup acks
-    const ackFile = ackPlayer.ready
-      ? ackPlayer.getContextualFile(context)
-      : this.tts.getRandomAckFile();
-    if (!ackFile) return;
-
-    if (this._ackProcess) {
-      try { this._ackProcess.kill(); } catch { /* ignore */ }
-    }
-
-    // DON'T mute mic — we need continuous audio for one-breath commands.
-    // Just reset VAD to prevent the tone from triggering speech detection.
-    this.vad.reset();
-
-    this._ackPlayedAt = Date.now();
-    if (this._userStoppedAt) {
-      log.info(`[Latency] Ack started at ${this._ackPlayedAt} — ${this._ackPlayedAt - this._userStoppedAt}ms after user stopped`);
-    }
-
-    let settled = false;
-    this._ackDone = new Promise((resolve) => {
-      const settle = () => {
-        if (settled) return;
-        settled = true;
-        this._ackProcess = null;
-        resolve();
-      };
-
-      this._ackProcess = this.playback.playFile(ackFile);
-      this._ackProcess.on('close', settle);
-      this._ackProcess.on('error', settle);
-
-      // Safety: if ack doesn't finish in 1.5s, force cleanup
-      setTimeout(settle, 1500);
-    });
-  }
-
   // ── Play a filler phrase while brain processes ──
   // Picks category based on command content: data queries get "data" fillers,
   // everything else gets "thinking" fillers.
@@ -701,27 +649,27 @@ class VoicePipeline extends EventEmitter {
       category = 'conversation';
     }
 
-    // Try filler first, fall back to ack
-    if (fillerPlayer.ready) {
-      const proc = fillerPlayer.play(category);
-      this._ackPlayedAt = Date.now();
-      if (this._turn) {
-        this._turn.fillerStartMs = Date.now();
-        this._turn.fillerText = category;
-      }
-      // Track when filler actually finishes (natural end or killed by 1.5s timeout)
-      if (proc) {
-        proc.on('close', () => {
-          if (this._turn && !this._turn.fillerEndMs) {
-            this._turn.fillerEndMs = Date.now();
-          }
-        });
-      }
-      if (this._userStoppedAt) {
-        log.info(`[Latency] Filler started at ${this._ackPlayedAt} — ${this._ackPlayedAt - this._userStoppedAt}ms after user stopped`);
-      }
-    } else {
-      this.playAck('quick');
+    if (!fillerPlayer.ready) {
+      log.debug('Filler player not ready — skipping filler');
+      return;
+    }
+
+    const proc = fillerPlayer.play(category);
+    this._ackPlayedAt = Date.now();
+    if (this._turn) {
+      this._turn.fillerStartMs = Date.now();
+      this._turn.fillerText = category;
+    }
+    // Track when filler actually finishes (natural end or killed by 1.5s timeout)
+    if (proc) {
+      proc.on('close', () => {
+        if (this._turn && !this._turn.fillerEndMs) {
+          this._turn.fillerEndMs = Date.now();
+        }
+      });
+    }
+    if (this._userStoppedAt) {
+      log.info(`[Latency] Filler started at ${this._ackPlayedAt} — ${this._ackPlayedAt - this._userStoppedAt}ms after user stopped`);
     }
   }
 

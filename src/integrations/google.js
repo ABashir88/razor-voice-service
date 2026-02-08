@@ -288,8 +288,23 @@ export class GoogleClient {
    * @returns {Array<{ start: string, end: string }>}
    */
   async findFreeSlots(start, end, durationMin = 30) {
-    const fromIso = new Date(start).toISOString();
-    const toIso = new Date(end).toISOString();
+    // Default to today's remaining hours if no range specified
+    const now = new Date();
+    const fromDate = start ? new Date(start) : now;
+    const endOfDay = new Date(now);
+    endOfDay.setHours(18, 0, 0, 0); // Business hours end at 6 PM
+    const toDate = end ? new Date(end) : endOfDay;
+
+    // Guard against invalid dates
+    if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
+      log.warn('findFreeSlots: invalid date range, using today');
+      const fallbackEnd = new Date();
+      fallbackEnd.setHours(18, 0, 0, 0);
+      return this._computeFreeSlots(new Date(), fallbackEnd, [], durationMin);
+    }
+
+    const fromIso = fromDate.toISOString();
+    const toIso = toDate.toISOString();
 
     const args = ['calendar', 'freebusy', 'primary', ...this._base(),
       '--from', fromIso,
@@ -301,7 +316,7 @@ export class GoogleClient {
 
     // gog freebusy --json returns busy intervals; compute gaps
     const busySlots = Array.isArray(data) ? data : (data.busy || data.calendars?.primary?.busy || []);
-    return this._computeFreeSlots(new Date(start), new Date(end), busySlots, durationMin);
+    return this._computeFreeSlots(fromDate, toDate, busySlots, durationMin);
   }
 
   // ---- Calendar helpers ---------------------------------------------------
