@@ -256,7 +256,7 @@ async function dispatchAction(action) {
           const leads = await integrations.salesloft.getHotLeads();
           if (!leads?.length) return "No hot leads right now.";
           const top3 = leads.slice(0, 3).map(l => l.name || l.email).join(", ");
-          return `${leads.length} hot lead${leads.length > 1 ? "s" : ""}: ${top3}.`;
+          return `You have ${leads.length} hot lead${leads.length > 1 ? "s" : ""} including ${top3}`;
         }
         return "Salesloft not connected.";
       }
@@ -268,7 +268,7 @@ async function dispatchAction(action) {
           const opens = await integrations.salesloft.getEmailOpens();
           if (!opens?.length) return "No email opens recently.";
           const top3 = opens.slice(0, 3).map(o => o.name || o.email).join(", ");
-          return `${opens.length} open${opens.length > 1 ? "s" : ""}: ${top3}.`;
+          return `${opens.length} people opened your emails including ${top3}`;
         }
         return "Salesloft not connected.";
       }
@@ -280,7 +280,7 @@ async function dispatchAction(action) {
           const clicks = await integrations.salesloft.getEmailClicks();
           if (!clicks?.length) return "No email clicks recently.";
           const top3 = clicks.slice(0, 3).map(c => c.name || c.email).join(", ");
-          return `${clicks.length} click${clicks.length > 1 ? "s" : ""}: ${top3}.`;
+          return `${clicks.length} people clicked your emails including ${top3}`;
         }
         return "Salesloft not connected.";
       }
@@ -291,7 +291,7 @@ async function dispatchAction(action) {
           const replies = await integrations.salesloft.getReplies();
           if (!replies?.length) return "No replies recently.";
           const top3 = replies.slice(0, 3).map(r => r.name || r.email).join(", ");
-          return `${replies.length} repl${replies.length > 1 ? "ies" : "y"}: ${top3}.`;
+          return `You got ${replies.length} repl${replies.length > 1 ? "ies" : "y"} from ${top3}`;
         }
         return "Salesloft not connected.";
       }
@@ -303,7 +303,7 @@ async function dispatchAction(action) {
           const cadences = await integrations.salesloft.getMyCadences();
           if (!cadences?.length) return "No active cadences.";
           const top3 = cadences.slice(0, 3).map(c => c.name).join(", ");
-          return `${cadences.length} cadence${cadences.length > 1 ? "s" : ""}: ${top3}.`;
+          return `You have ${cadences.length} active cadence${cadences.length > 1 ? "s" : ""} including ${top3}`;
         }
         return "Salesloft not connected.";
       }
@@ -313,7 +313,7 @@ async function dispatchAction(action) {
         if (integrations.salesloft) {
           const stats = await integrations.salesloft.getActivityStats();
           if (!stats) return "Could not get activity stats.";
-          return `Today: ${stats.calls || 0} calls, ${stats.emails || 0} emails.`;
+          return `Today you made ${stats.calls || 0} calls and sent ${stats.emails || 0} emails`;
         }
         return "Salesloft not connected.";
       }
@@ -326,7 +326,7 @@ async function dispatchAction(action) {
           const deals = await integrations.salesforce.getStaleDeals(7);
           if (!deals?.length) return "No stale deals. Pipeline is active.";
           const top3 = deals.slice(0, 3).map(d => d.Account?.Name || d.Name?.split(" - ")[0] || "Unknown").join(", ");
-          return `${deals.length} deal${deals.length > 1 ? "s" : ""} with no activity in 7 days: ${top3}.`;
+          return `You have ${deals.length} deal${deals.length > 1 ? "s" : ""} with no activity in the last week including ${top3}`;
         }
         return "Salesforce not connected.";
       }
@@ -341,7 +341,7 @@ async function dispatchAction(action) {
           if (!deals?.length) return `No deals closing ${period.replace("_", " ")}.`;
           const total = deals.reduce((sum, d) => sum + (d.Amount || 0), 0);
           const top3 = deals.slice(0, 3).map(d => d.Account?.Name || d.Name?.split(" - ")[0] || "Unknown").join(", ");
-          return `${deals.length} deal${deals.length > 1 ? "s" : ""} closing ${period.replace("_", " ")}, $${Math.round(total/1000)}k total: ${top3}.`;
+          return `${deals.length} deal${deals.length > 1 ? "s" : ""} closing ${period.replace("_", " ")} worth ${Math.round(total/1000)} thousand total including ${top3}`;
         }
         return "Salesforce not connected.";
       }
@@ -354,7 +354,7 @@ async function dispatchAction(action) {
           if (!company) return "Which company?";
           const dm = await integrations.salesforce.getDecisionMaker(company);
           if (!dm) return `No decision maker found for ${company}.`;
-          return `Decision maker at ${company}: ${dm.Name}, ${dm.Title || "no title"}.`;
+          return `The decision maker at ${company} is ${dm.Name}${dm.Title ? " who is " + dm.Title : ""}`;
         }
         return "Salesforce not connected.";
       }
@@ -367,9 +367,9 @@ async function dispatchAction(action) {
           if (!name) return "Which deal?";
           const deal = await integrations.salesforce.getDealByName(name);
           if (!deal) return `No deal found for ${name}.`;
-          const amt = deal.Amount ? `$${Math.round(deal.Amount/1000)}k` : "";
+          const amt = deal.Amount ? `${Math.round(deal.Amount/1000)} thousand dollars` : "";
           const stage = deal.StageName || "unknown stage";
-          return `${deal.Account?.Name || name}: ${amt}, ${stage}, closes ${deal.CloseDate || "TBD"}.`;
+          return `${deal.Account?.Name || name} is at ${amt || "unknown amount"} in ${stage}${deal.CloseDate ? " closing " + deal.CloseDate : ""}`;
         }
         return "Salesforce not connected.";
       }
@@ -388,7 +388,7 @@ async function dispatchAction(action) {
           const events = await integrations.google.getUpcomingEvents(days);
           if (!events?.length) return days === 1 ? "No meetings today." : `No meetings in the next ${days} days.`;
           const top3 = events.slice(0, 3).map(e => e.summary || "Untitled").join(", ");
-          return `${events.length} meeting${events.length > 1 ? "s" : ""}: ${top3}.`;
+          return `You have ${events.length} meeting${events.length > 1 ? "s" : ""} including ${top3}`;
         }
         return "Google not connected.";
       }
@@ -399,7 +399,7 @@ async function dispatchAction(action) {
         if (integrations.google) {
           const slots = await integrations.google.findFreeSlots(params.start, params.end, params.duration || 30);
           if (!slots?.length) return "No free slots found.";
-          return `Found ${slots.length} free slot${slots.length > 1 ? "s" : ""}. First one: ${slots[0].start}.`;
+          return `Found ${slots.length} free slot${slots.length > 1 ? "s" : ""} and the first one is at ${slots[0].start}`;
         }
         return "Google not connected.";
       }
@@ -412,7 +412,7 @@ async function dispatchAction(action) {
           const emails = await integrations.google.getUnreadEmails(5);
           if (!emails?.length) return "No unread emails.";
           const top3 = emails.slice(0, 3).map(e => e.from?.split("<")[0]?.trim() || "Unknown").join(", ");
-          return `${emails.length} unread email${emails.length > 1 ? "s" : ""} from: ${top3}.`;
+          return `You have ${emails.length} unread email${emails.length > 1 ? "s" : ""} from ${top3}`;
         }
         return "Google not connected.";
       }
@@ -435,8 +435,8 @@ async function dispatchAction(action) {
         if (integrations.salesforce) {
           const tasks = await integrations.salesforce.getTasks();
           if (!tasks?.length) return "No open Salesforce tasks.";
-          const top3 = tasks.slice(0, 3).map(t => t.Subject || "Untitled").join(". ");
-          return `${tasks.length} task${tasks.length > 1 ? "s" : ""}: ${top3}.`;
+          const top3 = tasks.slice(0, 3).map(t => t.Subject || "Untitled").join(" and ");
+          return `You have ${tasks.length} task${tasks.length > 1 ? "s" : ""} including ${top3}`;
         }
         return "Salesforce not connected.";
       }
@@ -446,8 +446,8 @@ async function dispatchAction(action) {
         if (integrations.salesforce) {
           const tasks = await integrations.salesforce.getUpcomingTasks(7);
           if (!tasks?.length) return "No upcoming tasks this week.";
-          const top3 = tasks.slice(0, 3).map(t => t.Subject || "Untitled").join(". ");
-          return `${tasks.length} upcoming task${tasks.length > 1 ? "s" : ""}: ${top3}.`;
+          const top3 = tasks.slice(0, 3).map(t => t.Subject || "Untitled").join(" and ");
+          return `You have ${tasks.length} upcoming task${tasks.length > 1 ? "s" : ""} including ${top3}`;
         }
         return "Salesforce not connected.";
       }
@@ -459,9 +459,9 @@ async function dispatchAction(action) {
           const opps = await integrations.salesforce.queryOpportunities({ orderBy: "Amount DESC", limit: 1 });
           if (!opps?.length) return "No open deals found.";
           const deal = opps[0];
-          const amt = deal.Amount ? `$${(deal.Amount/1000).toFixed(0)}k` : "";
+          const amt = deal.Amount ? `${Math.round(deal.Amount/1000)} thousand dollars` : "";
           const name = (deal.Name || "").split(" - ")[0] || deal.Account?.Name || "Unknown";
-          return `Your biggest open deal is ${name} at ${amt || "unknown amount"}.`;
+          return `Your biggest open deal is ${name} at ${amt || "unknown amount"}`;
         }
         return "Salesforce not connected.";
       }
@@ -476,8 +476,8 @@ async function dispatchAction(action) {
         if (integrations.fellow) {
           const items = await integrations.fellow.getMyActionItems();
           if (!items?.length) return "No open action items right now.";
-          const top3 = items.slice(0, 3).map(i => i.title || i.text).join(". ");
-          return `You have ${items.length} action item${items.length > 1 ? "s" : ""}. ${top3}.`;
+          const top3 = items.slice(0, 3).map(i => i.title || i.text).join(" and ");
+          return `You have ${items.length} action item${items.length > 1 ? "s" : ""} including ${top3}`;
         }
         return "Fellow not connected.";
       }
@@ -487,8 +487,8 @@ async function dispatchAction(action) {
         if (integrations.fellow) {
           const items = await integrations.fellow.getOverdueItems();
           if (!items?.length) return "Nothing overdue. You are all caught up.";
-          const top3 = items.slice(0, 3).map(i => i.title || i.text).join(". ");
-          return `${items.length} overdue item${items.length > 1 ? "s" : ""}. ${top3}.`;
+          const top3 = items.slice(0, 3).map(i => i.title || i.text).join(" and ");
+          return `You have ${items.length} overdue item${items.length > 1 ? "s" : ""} including ${top3}`;
         }
         return "Fellow not connected.";
       }
@@ -500,7 +500,7 @@ async function dispatchAction(action) {
         if (integrations.fellow) {
           const summary = await integrations.fellow.getLastMeetingSummary();
           if (!summary) return "No recent meetings found.";
-          return summary.summary || `Last meeting: ${summary.title}. ${summary.duration || ""}`;
+          return summary.summary || `Your last meeting was ${summary.title}`;
         }
         return "Fellow not connected.";
       }
@@ -523,7 +523,7 @@ async function dispatchAction(action) {
           if (!rec) return "No recent recordings to analyze.";
           const analytics = await integrations.fellow.getTranscriptAnalytics(rec.id);
           if (!analytics) return "Could not get talk ratio.";
-          return `Your talk ratio was ${analytics.userTalkRatio || "unknown"}. ${analytics.summary || ""}`;
+          return `Your talk ratio was ${analytics.userTalkRatio || "unknown"}${analytics.summary ? " and " + analytics.summary : ""}`;
         }
         return "Fellow not connected.";
       }
@@ -535,7 +535,7 @@ async function dispatchAction(action) {
           const meetings = await integrations.fellow.getTodaysMeetings();
           if (!meetings?.length) return "No meetings scheduled for today.";
           const names = meetings.slice(0, 3).map(m => m.title).join(", ");
-          return `${meetings.length} meeting${meetings.length > 1 ? "s" : ""} today: ${names}.`;
+          return `You have ${meetings.length} meeting${meetings.length > 1 ? "s" : ""} today including ${names}`;
         }
         return "Fellow not connected.";
       }
@@ -599,7 +599,7 @@ async function dispatchAction(action) {
           if (!notes?.length) return query ? `No meetings found for ${query}.` : "No recent meetings.";
           const items = await integrations.fellow.getActionItemsForMeeting(notes[0].id);
           if (!items?.length) return `No action items from ${notes[0].title}.`;
-          const top3 = items.slice(0, 3).map(i => i.title || i.text).join(". ");
+          const top3 = items.slice(0, 3).map(i => i.title || i.text).join(" and ");
           return `Action items from ${notes[0].title}: ${top3}.`;
         }
         return "Fellow not connected.";
