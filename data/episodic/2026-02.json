@@ -635,6 +635,30 @@
       "commitments": [],
       "tags": [],
       "turnCount": 40
+    },
+    {
+      "id": "ep_mlddw63q_v6nl67",
+      "date": "2026-02-08T06:47:31.400Z",
+      "timestamp": 1770533251400,
+      "topic": "voice_interaction",
+      "outcome": "shutdown",
+      "summary": "System shutdown during conversation",
+      "keyFacts": [],
+      "commitments": [],
+      "tags": [],
+      "turnCount": 23
+    },
+    {
+      "id": "ep_mldhnzbi_ybyv0z",
+      "date": "2026-02-08T08:30:09.782Z",
+      "timestamp": 1770539409782,
+      "topic": "voice_interaction",
+      "outcome": "shutdown",
+      "summary": "System shutdown during conversation",
+      "keyFacts": [],
+      "commitments": [],
+      "tags": [],
+      "turnCount": 40
     }
   ]
 }

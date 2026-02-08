@@ -36,8 +36,11 @@ import InterruptionHandler from './interruption-handler.js';
 import { attention } from './attention.js';
 import { followUpMode } from './follow-up-mode.js';
 import { ackPlayer } from '../audio/ack-player.js';
+import { fillerPlayer } from '../audio/filler-player.js';
 import { getStateMachine, States } from '../state/stateMachine.js';
 import { userState } from '../state/user-state.js';
+import { sttCorrections } from '../stt/correction-memory.js';
+import { auditPersonality, computeExperienceScore, logTurnBlock } from '../utils/humanoid-metrics.js';
 import config from '../config.js';
 import makeLogger from '../utils/logger.js';
 
@@ -89,6 +92,13 @@ class VoicePipeline extends EventEmitter {
     this._userStoppedAt = 0;
     this._ackPlayedAt = 0;
 
+    // ── Humanoid telemetry — turn lifecycle ──
+    this._turnNumber = 0;
+    this._sessionXPScores = [];
+    this._recentCommands = []; // last 5 commands with timestamps for repeat detection
+    this._turn = null;         // current turn state object (set by _startTurn)
+    this._rhythmData = { userSpeechMs: [], razorSpeechMs: [], turnsPerMinute: [], _firstTurnAt: 0 };
+
     // ── Session stats for [Session] logs ──
     this._sessionStats = {
       turns: 0,
@@ -133,7 +143,15 @@ class VoicePipeline extends EventEmitter {
     log.info('→ Preloading ack audio...');
     await ackPlayer.preload();
 
-    // 4. Fallback: generate macOS say acks if no TTS acks available
+    // 4. Load STT correction memory
+    log.info('→ Loading STT corrections...');
+    sttCorrections.load();
+
+    // 5. Preload filler phrases (natural thinking sounds)
+    log.info('→ Preloading filler phrases...');
+    await fillerPlayer.preload();
+
+    // 5. Fallback: generate macOS say acks if no TTS acks available
     if (!ackPlayer.ready) {
       log.info('→ No TTS acks found — generating fallback ack tones...');
       await this.tts.warmup();
@@ -195,7 +213,7 @@ class VoicePipeline extends EventEmitter {
         followUpMode.consume();
         attention.activity();
         this.sm.transition(States.PROCESSING, 'attention_follow_up');
-        this.playAck('quick');
+        // Ack moved to AFTER final transcript (was interrupting user mid-speech)
         this.captureCommand();
       }
     });
@@ -227,24 +245,29 @@ class VoicePipeline extends EventEmitter {
     });
 
     this.playback.on('playback:end', () => {
+      if (this._turn) this._turn.ttsEndMs = Date.now();
       this.interruptHandler.stopMonitoring();
       this.bluetooth.resumePolling();
       this._resumeMic();
       this.sm.transition(States.LISTENING, 'tts_finished');
       // Enter follow-up mode — user can speak without wake word for 5s
       followUpMode.enter();
+      this._endTurn();
     });
 
     this.playback.on('playback:interrupt', () => {
+      if (this._turn) { this._turn.ttsEndMs = Date.now(); this._turn.flags.push('interrupted'); }
       this.interruptHandler.stopMonitoring();
       this.bluetooth.resumePolling();
       this._resumeMic({ immediate: true });
       if (this.sm.getState().state !== States.INTERRUPTED) {
         this.sm.transition(States.LISTENING, 'playback_killed');
       }
+      this._endTurn();
     });
 
     this.playback.on('playback:error', (err) => {
+      if (this._turn) this._turn.flags.push('playback_error');
       log.error('Playback error:', err?.message || err);
       this.interruptHandler.stopMonitoring();
       this.bluetooth.resumePolling();
@@ -252,6 +275,7 @@ class VoicePipeline extends EventEmitter {
       if (this.sm.getState().state === States.SPEAKING) {
         this.sm.transition(States.LISTENING, 'playback_error');
       }
+      this._endTurn();
     });
 
     // ── Interruption Handler (Barge-In) ──
@@ -309,6 +333,7 @@ class VoicePipeline extends EventEmitter {
 
     attention.destroy();
     followUpMode.exit();
+    fillerPlayer.stop();
     if (this.commandTimeout) clearTimeout(this.commandTimeout);
     if (this.sttStream) await this.sttStream.close();
 
@@ -337,6 +362,33 @@ class VoicePipeline extends EventEmitter {
       log.info(`[Session]   Silent: ${s.silentResponses} empty responses`);
       log.info(`[Session]   Avg response: ${Math.round(s.totalResponseMs / s.turns)}ms`);
       log.info('[Session] ═══════════════════════════════════════');
+    }
+
+    // ── [Session] Humanoid Grade Card ──
+    if (this._sessionXPScores.length > 0) {
+      const scores = this._sessionXPScores;
+      const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+      const grade = avg >= 90 ? 'A' : avg >= 75 ? 'B' : avg >= 60 ? 'C' : avg >= 40 ? 'D' : 'F';
+      const dist = { A: 0, B: 0, C: 0, D: 0, F: 0 };
+      for (const s of scores) {
+        if (s >= 90) dist.A++;
+        else if (s >= 75) dist.B++;
+        else if (s >= 60) dist.C++;
+        else if (s >= 40) dist.D++;
+        else dist.F++;
+      }
+      const r = this._rhythmData;
+      const avgUser = r.userSpeechMs.length > 0
+        ? Math.round(r.userSpeechMs.reduce((a, b) => a + b, 0) / r.userSpeechMs.length)
+        : 0;
+      const avgRazor = r.razorSpeechMs.length > 0
+        ? Math.round(r.razorSpeechMs.reduce((a, b) => a + b, 0) / r.razorSpeechMs.length)
+        : 0;
+      log.info('[Session] ── HUMANOID GRADE CARD ──');
+      log.info(`[Session]   Overall: ${grade} (${avg}/100 avg over ${scores.length} turns)`);
+      log.info(`[Session]   Distribution: A=${dist.A} B=${dist.B} C=${dist.C} D=${dist.D} F=${dist.F}`);
+      log.info(`[Session]   Rhythm: user avg ${avgUser}ms, razor avg ${avgRazor}ms`);
+      log.info('[Session] ─────────────────────────');
     }
 
     log.info('Voice pipeline stopped');
@@ -415,8 +467,7 @@ class VoicePipeline extends EventEmitter {
     attention.wake('wake_word');
     followUpMode.exit();
 
-    // Play ack so user knows we heard them (killed before real TTS in speak())
-    this.playAck('quick');
+    // Ack moved to AFTER final transcript (was interrupting user mid-speech)
 
     this.sm.transition(States.PROCESSING, 'wake_word');
 
@@ -426,6 +477,9 @@ class VoicePipeline extends EventEmitter {
         log.info(`Complete command from wake transcript: "${command}"`);
         this._userStoppedAt = Date.now();
         log.info(`[Latency] User stopped speaking at ${this._userStoppedAt}`);
+        this._startTurn(command);
+        // Play filler phrase — natural thinking sound while brain processes
+        this._playFiller(command);
         this.emit('command', {
           text: command,
           source: 'wake-transcript',
@@ -466,6 +520,9 @@ class VoicePipeline extends EventEmitter {
       this._userStoppedAt = Date.now();
       log.info(`Command captured: "${commandText}"`);
       log.info(`[Latency] User stopped speaking at ${this._userStoppedAt}`);
+      this._startTurn(commandText);
+      // Play filler phrase — natural thinking sound while brain processes
+      this._playFiller(commandText);
       attention.activity();
       this.cleanupCommandCapture();
       this.emit('command', { text: commandText, source });
@@ -484,16 +541,29 @@ class VoicePipeline extends EventEmitter {
       }
     };
 
-    this.sttStream.on('transcript:final', ({ text }) => {
+    this.sttStream.on('transcript:final', ({ text, confidence }) => {
       if (done) return;
 
+      // Apply STT corrections (known misheards) before processing
+      let cleaned = sttCorrections.correct(text);
+
       // Strip wake word from first transcript (buffer replay includes "Razor" audio)
-      let cleaned = text;
       if (stripNextFinal) {
-        cleaned = this._stripWakeWord(text);
+        cleaned = this._stripWakeWord(cleaned);
         stripNextFinal = false;
       }
       if (cleaned) parts.push(cleaned);
+
+      // Track STT correction and confidence on turn
+      if (this._turn) {
+        if (text !== cleaned && !this._turn.sttCorrected) {
+          this._turn.sttOriginal = text;
+          this._turn.sttCorrected = cleaned;
+        }
+        if (confidence != null && this._turn.sttConfidence < 0) {
+          this._turn.sttConfidence = Math.round(confidence * 100);
+        }
+      }
 
       const cmd = getFullCommand();
       if (this._isCommandComplete(cmd)) {
@@ -616,6 +686,155 @@ class VoicePipeline extends EventEmitter {
     });
   }
 
+  // ── Play a filler phrase while brain processes ──
+  // Picks category based on command content: data queries get "data" fillers,
+  // everything else gets "thinking" fillers.
+  _playFiller(commandText = '') {
+    // Pick filler category based on command content
+    const lower = commandText.toLowerCase();
+    let category = 'thinking';
+    if (/calendar|schedule|meeting|email|inbox|account|dashboard|numbers|data|pipeline|deals/.test(lower)) {
+      category = 'data';
+    } else if (/how|why|what do you think|opinion|advice/.test(lower)) {
+      category = 'conversation';
+    }
+
+    // Try filler first, fall back to ack
+    if (fillerPlayer.ready) {
+      fillerPlayer.play(category);
+      this._ackPlayedAt = Date.now();
+      if (this._turn) {
+        this._turn.fillerStartMs = Date.now();
+        this._turn.fillerText = category;
+      }
+      if (this._userStoppedAt) {
+        log.info(`[Latency] Filler started at ${this._ackPlayedAt} — ${this._ackPlayedAt - this._userStoppedAt}ms after user stopped`);
+      }
+    } else {
+      this.playAck('quick');
+    }
+  }
+
+  // ── Humanoid Telemetry: Turn Lifecycle ──────────────────────────────────
+
+  _startTurn(rawCommand) {
+    this._turnNumber++;
+    const now = Date.now();
+    this._turn = {
+      number: this._turnNumber,
+      startedAt: now,
+      command: rawCommand,
+      sttOriginal: null,
+      sttCorrected: null,
+      sttConfidence: -1,
+      userSpeechStartedAt: this._wakeTimestamp || now,
+      userStoppedAt: this._userStoppedAt || now,
+      userSpeechMs: Math.max(0, (this._userStoppedAt || now) - (this._wakeTimestamp || now)),
+      fillerStartMs: null,
+      fillerEndMs: null,
+      fillerText: null,
+      brainRequestedAt: null,
+      brainFirstChunkAt: null,
+      brainRespondedAt: null,
+      brainMs: 0,
+      dataFetchStartedAt: null,
+      dataFetchEndedAt: null,
+      dataFetchMs: 0,
+      ttsStartMs: null,
+      ttsEndMs: null,
+      intent: null,
+      actions: [],
+      spokenText: null,
+      cacheHit: false,
+      prefetched: false,
+      personalityScore: 0,
+      personalityEmoji: '',
+      personalityGood: [],
+      personalityBad: [],
+      xpScore: 0,
+      xpGrade: 'F',
+      xpEmoji: '',
+      xpDeductions: [],
+      flags: [],
+    };
+    this._checkForRepeat(rawCommand, now);
+  }
+
+  _endTurn() {
+    if (!this._turn) return;
+    const t = this._turn;
+
+    // Personality audit
+    const pa = auditPersonality(t.spokenText);
+    t.personalityScore = pa.score;
+    t.personalityEmoji = pa.emoji;
+    t.personalityGood = pa.good;
+    t.personalityBad = pa.bad;
+
+    // Experience score
+    const xp = computeExperienceScore(t);
+    t.xpScore = xp.score;
+    t.xpGrade = xp.grade;
+    t.xpEmoji = xp.emoji;
+    t.xpDeductions = xp.deductions;
+
+    // Track for session summary
+    this._sessionXPScores.push(t.xpScore);
+
+    // Log consolidated turn block
+    logTurnBlock(t, log);
+
+    // Log conversation rhythm
+    this._logRhythm(t);
+
+    this._turn = null;
+  }
+
+  _checkForRepeat(command, now) {
+    const recent = this._recentCommands;
+    for (const prev of recent) {
+      if (now - prev.ts < 20_000 && this._isSimilarCommand(command, prev.command)) {
+        this._turn.flags.push('repeat_command');
+        const repeats = recent.filter(r => now - r.ts < 60_000 && this._isSimilarCommand(command, r.command)).length;
+        if (repeats >= 2) this._turn.flags.push('frustration');
+        break;
+      }
+    }
+    recent.push({ command, ts: now });
+    if (recent.length > 5) recent.shift();
+  }
+
+  _isSimilarCommand(a, b) {
+    if (!a || !b) return false;
+    const na = a.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+    const nb = b.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+    if (na === nb) return true;
+    const wa = new Set(na.split(/\s+/));
+    const wb = new Set(nb.split(/\s+/));
+    let overlap = 0;
+    for (const w of wa) { if (wb.has(w)) overlap++; }
+    return overlap / Math.max(wa.size, wb.size) >= 0.8;
+  }
+
+  _logRhythm(t) {
+    this._rhythmData.userSpeechMs.push(t.userSpeechMs);
+    const razorMs = (t.ttsEndMs && t.ttsStartMs) ? t.ttsEndMs - t.ttsStartMs : 0;
+    this._rhythmData.razorSpeechMs.push(razorMs);
+    if (this._turnNumber >= 2) {
+      if (!this._rhythmData._firstTurnAt) this._rhythmData._firstTurnAt = t.startedAt;
+      const elapsedMin = (t.startedAt - this._rhythmData._firstTurnAt) / 60_000;
+      if (elapsedMin > 0) {
+        this._rhythmData.turnsPerMinute.push(this._turnNumber / elapsedMin);
+      }
+    }
+    const avgUser = this._rhythmData.userSpeechMs.reduce((a, b) => a + b, 0) / this._rhythmData.userSpeechMs.length;
+    const avgRazor = this._rhythmData.razorSpeechMs.length > 0
+      ? this._rhythmData.razorSpeechMs.reduce((a, b) => a + b, 0) / this._rhythmData.razorSpeechMs.length
+      : 0;
+    const ratio = avgRazor > 0 ? (avgUser / avgRazor).toFixed(2) : 'N/A';
+    log.info(`[Rhythm] Avg user: ${Math.round(avgUser)}ms | Avg Razor: ${Math.round(avgRazor)}ms | Talk ratio: ${ratio} | Turn ${this._turnNumber}`);
+  }
+
   // ── Speak text (called by external command handler) ──
   // Respects user availability state: if user is IN_CALL or DND and Razor
   // is initiating proactively, the speech is queued instead of spoken.
@@ -636,13 +855,21 @@ class VoicePipeline extends EventEmitter {
 
     followUpMode.exit();
 
-    // Kill any playing ack before starting real TTS
+    // Kill any playing filler or ack before starting real TTS
+    fillerPlayer.stop();
     if (this._ackProcess) {
       try { this._ackProcess.kill('SIGKILL'); } catch { /* ignore */ }
       this._ackProcess = null;
     }
 
     this.sm.transition(States.SPEAKING, 'tts_start');
+
+    // Track filler end and TTS start on turn
+    if (this._turn) {
+      if (!this._turn.fillerEndMs && this._turn.fillerStartMs) this._turn.fillerEndMs = Date.now();
+      this._turn.ttsStartMs = Date.now();
+      this._turn.spokenText = text;
+    }
 
     // ── [Humanness] Latency summary ──
     if (this._userStoppedAt) {
@@ -667,6 +894,44 @@ class VoicePipeline extends EventEmitter {
       // playback:end or playback:interrupt will handle state transitions
     } catch (err) {
       log.error('Speak failed:', err.message);
+      this._resumeMic();
+      this.sm.transition(States.LISTENING, 'tts_error');
+    }
+  }
+
+  // ── Speak pre-synthesized audio (skips TTS, goes straight to playback) ──
+  async speakPreSynthesized(ttsResult, { pace = 'normal' } = {}) {
+    if (!ttsResult?.buffer) return;
+
+    followUpMode.exit();
+
+    // Kill any playing filler or ack
+    fillerPlayer.stop();
+    if (this._ackProcess) {
+      try { this._ackProcess.kill('SIGKILL'); } catch { /* ignore */ }
+      this._ackProcess = null;
+    }
+
+    this.sm.transition(States.SPEAKING, 'tts_pre_synth');
+
+    // Track filler end and TTS start on turn
+    if (this._turn) {
+      if (!this._turn.fillerEndMs && this._turn.fillerStartMs) this._turn.fillerEndMs = Date.now();
+      this._turn.ttsStartMs = Date.now();
+    }
+
+    if (this._userStoppedAt) {
+      const now = Date.now();
+      log.info(`[Latency] Pre-synth TTS started at ${now} — ${now - this._userStoppedAt}ms total wait`);
+    }
+
+    try {
+      await this.playback.play(ttsResult.buffer, {
+        pace,
+        format: ttsResult.format || 'mp3',
+      });
+    } catch (err) {
+      log.error('Pre-synth playback failed:', err.message);
       this._resumeMic();
       this.sm.transition(States.LISTENING, 'tts_error');
     }

@@ -113,7 +113,7 @@ class AckPlayer {
     ensureBluetoothOutput();
 
     const rate = config.pacing?.normal?.rate || 1.2;
-    const proc = spawn('afplay', [filepath, '-r', String(rate)], { stdio: 'ignore' });
+    const proc = spawn('afplay', ['-v', '0.3', filepath, '-r', String(rate)], { stdio: 'ignore' });
     proc.on('error', (err) => log.debug('Ack playback error:', err.message));
     return proc;
   }

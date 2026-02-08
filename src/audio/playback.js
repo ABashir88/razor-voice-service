@@ -174,7 +174,7 @@ class AudioPlayback extends EventEmitter {
     ensureBluetoothOutput();
 
     const paceConfig = config.pacing.normal || { rate: 1.2 };
-    const proc = spawn('afplay', [filepath, '-r', String(paceConfig.rate)], { stdio: 'ignore' });
+    const proc = spawn('afplay', ['-v', '0.3', filepath, '-r', String(paceConfig.rate)], { stdio: 'ignore' });
     proc.on('error', (err) => log.debug('Quick playback error:', err.message));
     return proc;
   }

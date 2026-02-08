@@ -180,6 +180,8 @@ _ACTION_PATTERNS: list[tuple[_re.Pattern, dict]] = [
     # ═══════════════════════════════════════════════════════════════════
     # OTHER
     # ═══════════════════════════════════════════════════════════════════
+    (_re.compile(r"(briefing|brief me|morning briefing|daily briefing|catch me up|what.?s happening)", _re.I),
+     {"action": "morning_briefing", "params": {}}),
     (_re.compile(r"remind me", _re.I),
      {"action": "create_reminder", "params": {}}),
     (_re.compile(r"(log.*(call|meeting|activity)|record.*(call|meeting))", _re.I),
@@ -385,6 +387,8 @@ class BrainEngine:
             response_text = ""
             t_first_token = None
 
+            tts_chunk_sent = False
+
             async with self.client.messages.stream(
                 model=MODEL_NAME,
                 max_tokens=MAX_TOKENS,
@@ -397,8 +401,8 @@ class BrainEngine:
                         t_first_token = time.time()
                     response_text += chunk
 
-                    # Send streaming chunks to WebSocket for early TTS
                     if websocket:
+                        # Send raw streaming chunk
                         try:
                             await websocket.send_json({
                                 "type": "stream_chunk",
@@ -406,7 +410,31 @@ class BrainEngine:
                                 "content": chunk,
                             })
                         except Exception:
-                            pass  # Don't fail on chunk send errors
+                            pass
+
+                        # Extract "text" field for early TTS pre-synthesis
+                        if not tts_chunk_sent:
+                            text_match = _re.search(
+                                r'"text"\s*:\s*"((?:[^"\\]|\\.)*)"',
+                                response_text,
+                            )
+                            if text_match:
+                                tts_text = text_match.group(1).strip()
+                                if tts_text and tts_text != ".":
+                                    tts_chunk_sent = True
+                                    try:
+                                        await websocket.send_json({
+                                            "type": "tts_chunk",
+                                            "request_id": request_id,
+                                            "text": tts_text,
+                                        })
+                                        logger.info(
+                                            "TTS chunk sent: '%s' (%.0fms after first token)",
+                                            tts_text[:60],
+                                            (time.time() - (t_first_token or t_api)) * 1000,
+                                        )
+                                    except Exception:
+                                        pass
 
             t_api_done = time.time()
 

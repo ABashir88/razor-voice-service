@@ -87,7 +87,7 @@ const config = Object.freeze({
       //   4. Telnyx.Natural.blaze    – 793ms, 24kHz/160kbps, warm
       // Kokoro voices (22kHz/32kbps — lower quality, slightly faster):
       //   Telnyx.KokoroTTS.am_adam, am_michael, am_eric, am_onyx
-      voice: env('TELNYX_VOICE', 'Telnyx.Natural.boulder'),
+      voice: env('TELNYX_VOICE', 'Telnyx.Natural.armon'),
       endpoint: 'https://api.telnyx.com/v2/text-to-speech/speech',
     }),
 

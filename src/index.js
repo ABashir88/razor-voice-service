@@ -15,6 +15,8 @@ import { IntegrationManager } from './integrations/index.js';
 import { getBrainConnector } from './brain/connector.js';
 import { getStateMachine, States } from './state/stateMachine.js';
 import { getConversationContext } from "./context/conversation-context.js";
+import { queryCache } from './intelligence/query-cache.js';
+import { morningBriefing } from './intelligence/morning-briefing.js';
 import makeLogger from './utils/logger.js';
 import speechLogger from "./utils/speech-logger.js";
 
@@ -76,6 +78,8 @@ const DATA_FETCH_ACTIONS = new Set([
   'get_deal_by_name', 'deal_status', 'tell_me_about_deal',
   'get_sf_tasks', 'salesforce_tasks', 'my_tasks',
   'get_upcoming_tasks', 'upcoming_tasks',
+  // Morning briefing
+  'morning_briefing', 'daily_briefing', 'give_briefing',
   // Google Calendar & Email
   'get_upcoming_events', 'whats_on_calendar', 'my_calendar', 'meetings_this_week',
   'find_free_time', 'am_i_free', 'free_slots',
@@ -91,6 +95,14 @@ async function dispatchAction(action) {
 
   try {
     switch (type) {
+      case 'morning_briefing':
+      case 'daily_briefing':
+      case 'give_briefing': {
+        // Trigger morning briefing manually — assemble and return as text
+        await morningBriefing.deliver();
+        return null; // deliver() speaks directly, no need to return text
+      }
+
       case 'search_contact':
       case 'lookup_contact':
         return await integrations.getContactContext(params.name || params.query);
@@ -806,10 +818,34 @@ async function handleCommand({ text, source }) {
   // ── If brain is connected, use it ──
   if (brain.connected) {
     try {
+      // Set up early TTS pre-synthesis via streaming
+      let preSynthPromise = null;
+      let preSynthText = null;
+
+      const onTtsChunk = ({ text: chunkText }) => {
+        if (pipeline._turn && !pipeline._turn.brainFirstChunkAt) pipeline._turn.brainFirstChunkAt = Date.now();
+        const cleaned = cleanForTTS(extractSpeakableText(chunkText));
+        if (cleaned) {
+          preSynthText = cleaned;
+          preSynthPromise = pipeline.tts.synthesize(cleaned, { pace: 'normal' }).catch(() => null);
+          log.info(`[Streaming] Pre-synthesizing TTS: "${cleaned.slice(0, 60)}..."`);
+        }
+      };
+      brain.once('brain:tts_chunk', onTtsChunk);
+
+      if (pipeline._turn) pipeline._turn.brainRequestedAt = Date.now();
       const response = await brain.process(text, {
         source,
         memoryContext: memory.getContext(),
-      });
+      }, true); // stream=true for early TTS
+
+      brain.removeListener('brain:tts_chunk', onTtsChunk);
+
+      if (pipeline._turn) {
+        pipeline._turn.brainRespondedAt = Date.now();
+        pipeline._turn.brainMs = pipeline._turn.brainRequestedAt ? Date.now() - pipeline._turn.brainRequestedAt : 0;
+        pipeline._turn.intent = response.intent || 'unknown';
+      }
 
       let speakText = extractSpeakableText(response.text);
       if (pipeline._userStoppedAt) {
@@ -835,13 +871,31 @@ async function handleCommand({ text, source }) {
       // short fallback — never speak the brain's filler phrase.
       if (dataActions.length > 0) {
         log.info(`Fetching data for ${dataActions.length} action(s)...`);
+        if (pipeline._turn) pipeline._turn.dataFetchStartedAt = Date.now();
 
         const results = await Promise.all(
           dataActions.map(async (a) => {
+            // Check cache first
+            const cached = queryCache.get(a.action, a.params);
+            if (cached) {
+              log.info(`[Cache] HIT for ${a.action}`);
+              if (pipeline._turn) pipeline._turn.cacheHit = true;
+              return { action: a.action, params: a.params, result: cached };
+            }
             const result = await dispatchAction(a);
+            // Cache the result for future queries
+            if (result != null) queryCache.set(a.action, result, undefined, a.params);
             return { action: a.action, params: a.params, result };
           }),
         );
+
+        if (pipeline._turn) {
+          pipeline._turn.dataFetchEndedAt = Date.now();
+          pipeline._turn.dataFetchMs = pipeline._turn.dataFetchStartedAt ? Date.now() - pipeline._turn.dataFetchStartedAt : 0;
+          for (const r of results) {
+            pipeline._turn.actions.push({ action: r.action, succeeded: r.result != null });
+          }
+        }
 
         const fetched = results.filter(r => r.result != null);
         const failedCount = dataActions.length - fetched.length;
@@ -874,6 +928,7 @@ async function handleCommand({ text, source }) {
 
       // Clean before TTS — strip artifacts, skip placeholder responses
       // Clean and naturalize for TTS
+      if (pipeline._turn) pipeline._turn.spokenText = speakText;
       const originalText = speakText;
       speakText = cleanForTTS(speakText);
       speakText = speechLogger.makeNatural(speakText);
@@ -890,6 +945,8 @@ async function handleCommand({ text, source }) {
       if (!speakText) {
         log.info("Skipping TTS — empty or placeholder response after cleaning");
         pipeline._sessionStats.silentResponses++;
+        if (pipeline._turn) pipeline._turn.flags.push('empty_response');
+        pipeline._endTurn();
         sm.transition(States.LISTENING, "empty_response");
         return;
       }
@@ -905,9 +962,27 @@ async function handleCommand({ text, source }) {
         entities: response.entities,
       });
 
-      // Speak the response
+      // Speak the response — use pre-synthesized audio if available
       const pace = determinePace(response);
-      await pipeline.speak(speakText, { pace });
+
+      // For non-data responses, check if pre-synthesis completed
+      if (preSynthPromise && dataActions.length === 0) {
+        const preSynthResult = await Promise.race([
+          preSynthPromise,
+          new Promise(resolve => setTimeout(() => resolve(null), 2000)),
+        ]);
+
+        // Use pre-synth if the text matches (hasn't been modified by humanization etc.)
+        if (preSynthResult && preSynthText === cleanForTTS(extractSpeakableText(response.text))) {
+          log.info('[Streaming] Using pre-synthesized audio');
+          await pipeline.speakPreSynthesized(preSynthResult, { pace });
+        } else {
+          if (preSynthResult) log.info('[Streaming] Text changed after pre-synth, re-synthesizing');
+          await pipeline.speak(speakText, { pace });
+        }
+      } else {
+        await pipeline.speak(speakText, { pace });
+      }
 
       // ── [Session] Turn tracking ──
       const responseTimeMs = Date.now() - _cmdStartMs;
@@ -1336,6 +1411,7 @@ memory.on('memory:reflected', (result) => {
 async function shutdown() {
   log.info('\nShutting down Razor...');
   clearTimeout(idleTimer);
+  morningBriefing.stop();
 
   if (conversationActive) {
     try {
@@ -1403,6 +1479,19 @@ async function main() {
     log.warn('Integration init failed:', err.message);
   }
 
+  // ── Register prefetch callbacks for frequently-used queries ──
+  if (integrations.google) {
+    queryCache.registerPrefetch('check_calendar', () => integrations.getUpcomingSchedule(1));
+    queryCache.registerPrefetch('get_unread_emails', () => integrations.google.getUnreadEmails(5));
+  }
+  if (integrations.salesforce) {
+    queryCache.registerPrefetch('get_pipeline', () => integrations.salesforce.getPipeline());
+  }
+  if (integrations.fellow) {
+    queryCache.registerPrefetch('get_action_items', () => integrations.fellow.getMyActionItems());
+    queryCache.registerPrefetch('get_today_meetings', () => integrations.fellow.getTodaysMeetings());
+  }
+
   // ── 4. Wire events and start ──
   log.info('[4/4] Starting pipeline...');
 
@@ -1410,6 +1499,11 @@ async function main() {
 
   pipeline.on('command:partial', ({ text }) => {
     process.stdout.write(`\r  🎤 ${text}                    `);
+  });
+
+  // Predictive prefetch: warm cache when user starts speaking
+  pipeline.on('command', () => {
+    queryCache.prefetch().catch(() => {}); // fire-and-forget
   });
 
   pipeline.on('command:timeout', () => {
@@ -1421,6 +1515,9 @@ async function main() {
   });
 
   await pipeline.start();
+
+  // Start morning briefing scheduler (8:30 AM weekdays)
+  morningBriefing.start(pipeline, integrations);
 
   log.info('');
   log.info('┌─────────────────────────────────────────┐');
