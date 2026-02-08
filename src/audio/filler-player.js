@@ -25,6 +25,7 @@ class FillerPlayer {
     this.manifest = {};   // category → [{ text, file }]
     this.ready = false;
     this._process = null; // current afplay process
+    this._killTimer = null; // 1.5s auto-kill safety
   }
 
   /**
@@ -87,9 +88,22 @@ class FillerPlayer {
 
     log.debug(`Playing filler: "${pick.text}" (${pick.file})`);
     this._process = spawn('afplay', ['-v', '0.4', filepath], { stdio: 'ignore' });
-    this._process.on('close', () => { this._process = null; });
+
+    // Auto-kill after 1.5s — no filler should run longer
+    this._killTimer = setTimeout(() => {
+      if (this._process) {
+        log.debug('Filler auto-killed after 1.5s');
+        this.stop();
+      }
+    }, 1500);
+
+    this._process.on('close', () => {
+      if (this._killTimer) { clearTimeout(this._killTimer); this._killTimer = null; }
+      this._process = null;
+    });
     this._process.on('error', (err) => {
       log.debug('Filler playback error:', err.message);
+      if (this._killTimer) { clearTimeout(this._killTimer); this._killTimer = null; }
       this._process = null;
     });
 
@@ -100,6 +114,7 @@ class FillerPlayer {
    * Stop the currently playing filler immediately.
    */
   stop() {
+    if (this._killTimer) { clearTimeout(this._killTimer); this._killTimer = null; }
     if (this._process) {
       try { this._process.kill('SIGKILL'); } catch { /* ignore */ }
       this._process = null;

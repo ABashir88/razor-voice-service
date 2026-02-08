@@ -17,10 +17,10 @@ const log = makeLogger('QueryCache');
 
 // Default TTLs by action category (ms)
 const DEFAULT_TTLS = {
-  // Calendar: 5 minutes (events don't change that fast)
-  check_calendar: 300_000,
-  get_schedule: 300_000,
-  get_upcoming_events: 300_000,
+  // Calendar: 10 minutes (events don't change that fast)
+  check_calendar: 600_000,
+  get_schedule: 600_000,
+  get_upcoming_events: 600_000,
 
   // Email: 2 minutes (new emails arrive)
   check_email: 120_000,

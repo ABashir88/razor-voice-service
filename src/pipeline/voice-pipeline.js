@@ -98,6 +98,10 @@ class VoicePipeline extends EventEmitter {
     this._recentCommands = []; // last 5 commands with timestamps for repeat detection
     this._turn = null;         // current turn state object (set by _startTurn)
     this._rhythmData = { userSpeechMs: [], razorSpeechMs: [], turnsPerMinute: [], _firstTurnAt: 0 };
+    // STT values captured during transcript:final (before _turn exists)
+    this._lastSttConfidence = null;
+    this._lastSttOriginal = null;
+    this._lastSttCorrected = null;
 
     // ── Session stats for [Session] logs ──
     this._sessionStats = {
@@ -554,15 +558,13 @@ class VoicePipeline extends EventEmitter {
       }
       if (cleaned) parts.push(cleaned);
 
-      // Track STT correction and confidence on turn
-      if (this._turn) {
-        if (text !== cleaned && !this._turn.sttCorrected) {
-          this._turn.sttOriginal = text;
-          this._turn.sttCorrected = cleaned;
-        }
-        if (confidence != null && this._turn.sttConfidence < 0) {
-          this._turn.sttConfidence = Math.round(confidence * 100);
-        }
+      // Save STT correction and confidence for _startTurn (turn doesn't exist yet)
+      if (text !== cleaned && !this._lastSttCorrected) {
+        this._lastSttOriginal = text;
+        this._lastSttCorrected = cleaned;
+      }
+      if (confidence != null) {
+        this._lastSttConfidence = confidence;
       }
 
       const cmd = getFullCommand();
@@ -701,11 +703,19 @@ class VoicePipeline extends EventEmitter {
 
     // Try filler first, fall back to ack
     if (fillerPlayer.ready) {
-      fillerPlayer.play(category);
+      const proc = fillerPlayer.play(category);
       this._ackPlayedAt = Date.now();
       if (this._turn) {
         this._turn.fillerStartMs = Date.now();
         this._turn.fillerText = category;
+      }
+      // Track when filler actually finishes (natural end or killed by 1.5s timeout)
+      if (proc) {
+        proc.on('close', () => {
+          if (this._turn && !this._turn.fillerEndMs) {
+            this._turn.fillerEndMs = Date.now();
+          }
+        });
       }
       if (this._userStoppedAt) {
         log.info(`[Latency] Filler started at ${this._ackPlayedAt} — ${this._ackPlayedAt - this._userStoppedAt}ms after user stopped`);
@@ -724,9 +734,9 @@ class VoicePipeline extends EventEmitter {
       number: this._turnNumber,
       startedAt: now,
       command: rawCommand,
-      sttOriginal: null,
-      sttCorrected: null,
-      sttConfidence: -1,
+      sttOriginal: this._lastSttOriginal,
+      sttCorrected: this._lastSttCorrected,
+      sttConfidence: this._lastSttConfidence != null ? Math.round(this._lastSttConfidence * 100) : -1,
       userSpeechStartedAt: this._wakeTimestamp || now,
       userStoppedAt: this._userStoppedAt || now,
       userSpeechMs: Math.max(0, (this._userStoppedAt || now) - (this._wakeTimestamp || now)),
@@ -757,6 +767,11 @@ class VoicePipeline extends EventEmitter {
       xpDeductions: [],
       flags: [],
     };
+    // Reset saved STT values
+    this._lastSttConfidence = null;
+    this._lastSttOriginal = null;
+    this._lastSttCorrected = null;
+
     this._checkForRepeat(rawCommand, now);
   }
 

@@ -25,7 +25,7 @@ async function gog(args, label = 'gog') {
     try {
       log.debug(`${label}: gog ${args.join(' ')}`);
       const { stdout } = await execFileAsync('gog', args, {
-        timeout: 30000,
+        timeout: 10000,
         maxBuffer: 5 * 1024 * 1024,
       });
       return stdout;

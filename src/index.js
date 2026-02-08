@@ -98,9 +98,9 @@ async function dispatchAction(action) {
       case 'morning_briefing':
       case 'daily_briefing':
       case 'give_briefing': {
-        // Trigger morning briefing manually — assemble and return as text
-        await morningBriefing.deliver();
-        return null; // deliver() speaks directly, no need to return text
+        // Assemble and return text — let normal data response flow speak it
+        const briefText = await morningBriefing.assemble();
+        return briefText || 'Nothing to report this morning.';
       }
 
       case 'search_contact':
@@ -1104,6 +1104,11 @@ function fmtTime(e) {
 function formatDataForSpeech(actionType, data) {
   if (!data) return null;
 
+  // Briefings are pre-curated for TTS — no truncation needed
+  if (actionType === 'morning_briefing' || actionType === 'daily_briefing' || actionType === 'give_briefing') {
+    return typeof data === 'string' ? data : data.text || null;
+  }
+
   if (typeof data === 'string') return truncateForTTS(data);
 
   // Calendar: { calendarEvents, salesforceTasks, fellowMeetings }
@@ -1483,6 +1488,13 @@ async function main() {
   if (integrations.google) {
     queryCache.registerPrefetch('check_calendar', () => integrations.getUpcomingSchedule(1));
     queryCache.registerPrefetch('get_unread_emails', () => integrations.google.getUnreadEmails(5));
+    // Eagerly warm calendar cache on startup — most commonly asked query
+    integrations.getUpcomingSchedule(1).then(data => {
+      if (data != null) queryCache.set('check_calendar', data);
+      log.info('[Prefetch] Calendar pre-cached on startup');
+    }).catch(err => {
+      log.warn(`[Prefetch] Calendar prefetch failed: ${err.message}`);
+    });
   }
   if (integrations.salesforce) {
     queryCache.registerPrefetch('get_pipeline', () => integrations.salesforce.getPipeline());

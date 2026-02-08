@@ -83,12 +83,13 @@ class MorningBriefing extends EventEmitter {
   }
 
   /**
-   * Deliver the morning briefing now. Can be called manually.
+   * Assemble briefing text without speaking. Returns the text string
+   * or null if nothing to report. Used by the action dispatcher.
    */
-  async deliver() {
-    if (!this._pipeline || !this._integrations) {
+  async assemble() {
+    if (!this._integrations) {
       log.warn('Morning briefing not initialized — skipping');
-      return;
+      return null;
     }
 
     log.info('Assembling morning briefing...');
@@ -161,16 +162,29 @@ class MorningBriefing extends EventEmitter {
       log.debug('Pipeline fetch failed:', err.message);
     }
 
-    // Assemble and speak
     if (parts.length <= 1) {
       log.info('Morning briefing: nothing to report');
-      return;
+      return null;
     }
 
     const briefingText = parts.join(' ');
     log.info(`Morning briefing: "${briefingText}"`);
-
     this.emit('briefing:ready', briefingText);
+    return briefingText;
+  }
+
+  /**
+   * Deliver the morning briefing now. Can be called manually.
+   * Assembles text and speaks it directly via the pipeline.
+   */
+  async deliver() {
+    if (!this._pipeline) {
+      log.warn('Morning briefing pipeline not set — skipping');
+      return;
+    }
+
+    const briefingText = await this.assemble();
+    if (!briefingText) return;
 
     try {
       await this._pipeline.speak(briefingText, { pace: 'calm', proactive: true });

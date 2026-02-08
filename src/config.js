@@ -75,7 +75,7 @@ const config = Object.freeze({
   tts: Object.freeze({
     provider: env('TTS_PROVIDER', 'telnyx'),
     playbackMuteBufferMs: envInt('PLAYBACK_MUTE_BUFFER_MS', 200),
-    maxCharsForSpeed: envInt('TTS_MAX_CHARS', 100), // Keep short — prevents Telnyx timeout + macOS say fallback
+    maxCharsForSpeed: envInt('TTS_MAX_CHARS', 200), // Briefings need ~130 chars; Telnyx handles 200 within 5s timeout
 
     telnyx: Object.freeze({
       apiKey: env('TELNYX_API_KEY', ''),

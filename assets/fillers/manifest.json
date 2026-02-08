@@ -2,59 +2,51 @@
   "thinking": [
     {
       "text": "Let me check.",
-      "file": "thinking_0.aiff"
+      "file": "thinking_0.mp3"
     },
     {
       "text": "One sec.",
-      "file": "thinking_1.aiff"
-    },
-    {
-      "text": "Checking now.",
-      "file": "thinking_2.aiff"
+      "file": "thinking_1.mp3"
     },
     {
       "text": "On it.",
-      "file": "thinking_3.aiff"
+      "file": "thinking_2.mp3"
     },
     {
-      "text": "Pulling that up.",
-      "file": "thinking_4.aiff"
+      "text": "Checking.",
+      "file": "thinking_3.mp3"
     },
     {
-      "text": "Let me see.",
-      "file": "thinking_5.aiff"
+      "text": "Hmm, let me see.",
+      "file": "thinking_4.mp3"
     }
   ],
   "data": [
     {
-      "text": "Let me grab those numbers.",
-      "file": "data_0.aiff"
+      "text": "Pulling that up.",
+      "file": "data_0.mp3"
     },
     {
-      "text": "Pulling the data.",
-      "file": "data_1.aiff"
-    },
-    {
-      "text": "Checking your dashboard.",
-      "file": "data_2.aiff"
+      "text": "Grabbing those numbers.",
+      "file": "data_1.mp3"
     },
     {
       "text": "One moment.",
-      "file": "data_3.aiff"
+      "file": "data_2.mp3"
     }
   ],
   "conversation": [
     {
       "text": "Hmm.",
-      "file": "conversation_0.aiff"
+      "file": "conversation_0.mp3"
     },
     {
       "text": "Good question.",
-      "file": "conversation_1.aiff"
+      "file": "conversation_1.mp3"
     },
     {
       "text": "Let me think.",
-      "file": "conversation_2.aiff"
+      "file": "conversation_2.mp3"
     }
   ]
 }
