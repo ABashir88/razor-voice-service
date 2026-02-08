@@ -145,14 +145,6 @@ async function dispatchAction(action) {
       case 'check_calendar':
         return await integrations.getUpcomingSchedule(params.days || 7);
 
-      case 'check_email':
-      case 'search_email':
-        if (integrations.google) {
-          return await integrations.google.getRecentEmails(params.query || '', params.max || 10);
-        }
-        log.warn('Google not available for email search');
-        return null;
-
       case 'account_brief':
       case 'lookup_account':
         return await integrations.getFullAccountBrief(params.accountName || params.name);

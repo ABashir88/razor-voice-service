@@ -7,7 +7,7 @@ import { getEnabledIntegrations } from './config.js';
 import { createSalesloftClient } from './salesloft.js';
 import { createSalesforceClient } from './salesforce.js';
 import { createGoogleClient } from './google.js';
-import { createFellowClient } from './fellow.js';
+import { createFellowClient } from './fellow-mcp.js';
 import { createBraveSearchClient } from './brave-search.js';
 
 const log = makeLogger('IntegrationManager');

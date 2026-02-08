@@ -563,6 +563,18 @@
       "commitments": [],
       "tags": [],
       "turnCount": 13
+    },
+    {
+      "id": "ep_mld6jkw1_19sbdq",
+      "date": "2026-02-08T03:21:36.305Z",
+      "timestamp": 1770520896305,
+      "topic": "voice_interaction",
+      "outcome": "shutdown",
+      "summary": "System shutdown during conversation",
+      "keyFacts": [],
+      "commitments": [],
+      "tags": [],
+      "turnCount": 21
     }
   ]
 }
