@@ -14,6 +14,7 @@ import { MemoryAgent } from './memory/index.js';
 import { IntegrationManager } from './integrations/index.js';
 import { getBrainConnector } from './brain/connector.js';
 import { getStateMachine, States } from './state/stateMachine.js';
+import { getConversationContext } from "./context/conversation-context.js";
 import makeLogger from './utils/logger.js';
 
 const log = makeLogger('Main');
@@ -24,6 +25,7 @@ const pipeline = new VoicePipeline();
 const memory = new MemoryAgent();
 const integrations = new IntegrationManager();
 const brain = getBrainConnector();
+const convContext = getConversationContext();
 
 // ── Track current conversation ──
 let conversationActive = false;
@@ -609,6 +611,145 @@ async function dispatchAction(action) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+//  CONTEXT-AWARE FOLLOW-UP RESOLUTION (Layer 2 & 3)
+//  Resolves references like "the first one", "call them", "tell me more"
+// ══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Check if user input is a follow-up and resolve to concrete action
+ * Returns null if not a follow-up, or { action, params, speakText } if resolved
+ */
+async function resolveFollowUp(text) {
+  if (!convContext.isContextFresh()) return null;
+  
+  const followUp = convContext.detectFollowUpIntent(text);
+  if (!followUp.isFollowUp) return null;
+  
+  log.info(`[Context] Follow-up detected: ${followUp.action}`);
+  
+  const resolved = followUp.resolvedEntity;
+  if (!resolved) {
+    log.info('[Context] No entity to resolve');
+    return null;
+  }
+  
+  // Handle different follow-up actions
+  switch (followUp.action) {
+    case 'call_entity': {
+      if (resolved.type === 'single' && resolved.entity) {
+        const entity = resolved.entity;
+        if (entity.phone) {
+          return { speakText: `Calling ${entity.name} at ${entity.phone}` };
+        }
+        // Need to look up phone
+        if (entity.type === 'person' && entity.name) {
+          return { 
+            action: 'lookup_contact', 
+            params: { name: entity.name },
+            postProcess: (result) => {
+              if (result?.phone) return `${entity.name}'s number is ${result.phone}`;
+              return `I don't have a phone number for ${entity.name}`;
+            }
+          };
+        }
+      }
+      return { speakText: "Who should I call?" };
+    }
+    
+    case 'email_entity': {
+      if (resolved.type === 'single' && resolved.entity) {
+        const entity = resolved.entity;
+        return { 
+          action: 'draft_email',
+          params: { to: entity.email || entity.name },
+          speakText: `I'll draft an email to ${entity.name}`
+        };
+      }
+      if (resolved.type === 'multiple') {
+        const names = resolved.entities.slice(0, 3).map(e => e.name).join(', ');
+        return { speakText: `I'll draft an email to ${names}` };
+      }
+      return { speakText: "Who should I email?" };
+    }
+    
+    case 'expand_entity':
+    case 'lookup_entity': {
+      if (resolved.type === 'single' && resolved.entity) {
+        const entity = resolved.entity;
+        if (entity.type === 'person') {
+          return { action: 'lookup_contact', params: { name: entity.name } };
+        }
+        if (entity.type === 'deal') {
+          return { action: 'get_deal_by_name', params: { name: entity.name } };
+        }
+        if (entity.type === 'company') {
+          return { action: 'lookup_account', params: { name: entity.company || entity.name } };
+        }
+        // Generic expand - just describe what we have
+        const details = [];
+        if (entity.name) details.push(entity.name);
+        if (entity.company) details.push(`at ${entity.company}`);
+        if (entity.amount) details.push(`${Math.round(entity.amount/1000)} thousand`);
+        if (entity.stage) details.push(`in ${entity.stage}`);
+        if (details.length > 0) {
+          return { speakText: details.join(' ') };
+        }
+      }
+      return null;
+    }
+    
+    case 'expand_last':
+    case 'continue_list': {
+      // Request more from the last action
+      const lastAction = convContext.lastAction;
+      if (lastAction) {
+        return { 
+          action: lastAction, 
+          params: { expanded: true, skip: convContext.lastEntities.length }
+        };
+      }
+      return { speakText: "What would you like me to expand on?" };
+    }
+    
+    case 'suggest_action':
+    case 'prioritize': {
+      // Use pending follow-ups
+      const suggestion = convContext.getProactiveFollowUp();
+      if (suggestion) {
+        return { speakText: suggestion };
+      }
+      if (convContext.lastEntities.length > 0) {
+        const first = convContext.lastEntities[0];
+        if (first.type === 'person') {
+          return { speakText: `I'd start with ${first.name} — they seem most engaged` };
+        }
+        if (first.type === 'deal') {
+          return { speakText: `Focus on ${first.name} — it's your biggest opportunity` };
+        }
+      }
+      return { speakText: "What's your top priority right now?" };
+    }
+    
+    case 'breakdown': {
+      const lastAction = convContext.lastAction;
+      if (lastAction === 'get_pipeline') {
+        return { action: 'get_pipeline_by_stage', params: {} };
+      }
+      return { speakText: "Break down by what — stage, company, or time?" };
+    }
+    
+    default:
+      return null;
+  }
+}
+
+/**
+ * Update context after successful data response
+ */
+function updateConversationContext(actionName, rawData, formattedText) {
+  convContext.updateContext(actionName, rawData, formattedText);
+}
+// ══════════════════════════════════════════════════════════════════════════
 //  COMMAND HANDLER
 //  Voice pipeline emits 'command' when user speech is captured.
 //  We send it to the brain, speak the response, and dispatch actions.
@@ -633,6 +774,30 @@ async function handleCommand({ text, source }) {
 
   // Record user turn in memory
   memory.addTurn('user', text, { source });
+
+
+  // ── Layer 2/3: Check for context-aware follow-up ──
+  const followUpResult = await resolveFollowUp(text);
+  if (followUpResult) {
+    log.info("[Context] Resolved follow-up:", followUpResult);
+    if (followUpResult.speakText && !followUpResult.action) {
+      // Direct response without needing data fetch
+      memory.addTurn("assistant", followUpResult.speakText, { contextResolved: true });
+      await pipeline.speak(followUpResult.speakText, { pace: "calm" });
+      return;
+    }
+    if (followUpResult.action) {
+      // Inject resolved action into processing
+      const result = await dispatchAction({ action: followUpResult.action, params: followUpResult.params || {} });
+      if (result) {
+        const formatted = formatDataForSpeech(followUpResult.action, result);
+        updateConversationContext(followUpResult.action, result, formatted);
+        memory.addTurn("assistant", formatted, { contextResolved: true });
+        await pipeline.speak(formatted, { pace: "calm" });
+        return;
+      }
+    }
+  }
 
   // ── If brain is connected, use it ──
   if (brain.connected) {
@@ -680,6 +845,8 @@ async function handleCommand({ text, source }) {
           if (dataSummary) {
             speakText = dataSummary;
             log.info(`Data response: "${speakText.slice(0, 80)}${speakText.length > 80 ? '...' : ''}"`);
+            // Update conversation context with fetched data
+            fetched.forEach(r => updateConversationContext(r.action, r.result, formatDataForSpeech(r.action, r.result)));
           } else {
             // Data returned but formatter couldn't summarize — don't speak filler
             speakText = 'Got the data but nothing to report.';
