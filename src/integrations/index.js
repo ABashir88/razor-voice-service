@@ -239,7 +239,7 @@ export class IntegrationManager extends EventEmitter {
       safe('fellow.meetings', () => {
         const from = new Date().toISOString();
         const to   = new Date(Date.now() + days * 86_400_000).toISOString();
-        return this.fellow?.getMeetings({ from, to });
+        return this.fellow?.getTodaysMeetings();
       }),
     ]);
 

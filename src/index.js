@@ -359,7 +359,7 @@ async function dispatchAction(action) {
           if (!name) return "Which deal?";
           const deal = await integrations.salesforce.getDealByName(name);
           if (!deal) return `No deal found for ${name}.`;
-          const amt = deal.Amount ? `${Math.round(deal.Amount/1000)} thousand dollars` : "";
+          const amt = deal.Amount ? (deal.Amount >= 1000 ? `${Math.round(deal.Amount/1000)} thousand` : `${deal.Amount}`) : "unknown amount";
           const stage = deal.StageName || "unknown stage";
           return `${deal.Account?.Name || name} is at ${amt || "unknown amount"} in ${stage}${deal.CloseDate ? " closing " + deal.CloseDate : ""}`;
         }
@@ -451,9 +451,10 @@ async function dispatchAction(action) {
           const opps = await integrations.salesforce.queryOpportunities({ orderBy: "Amount DESC", limit: 1 });
           if (!opps?.length) return "No open deals found.";
           const deal = opps[0];
-          const amt = deal.Amount ? `${Math.round(deal.Amount/1000)} thousand dollars` : "";
-          const name = (deal.Name || "").split(" - ")[0] || deal.Account?.Name || "Unknown";
-          return `Your biggest open deal is ${name} at ${amt || "unknown amount"}`;
+          const amt = deal.Amount ? (deal.Amount >= 1000 ? `${Math.round(deal.Amount/1000)} thousand` : `${deal.Amount}`) : "unknown amount";
+          const name = (deal.Name || "").replace(/[:-]/g, " ").split(" ").slice(0,3).join(" ") || deal.Account?.Name || "Unknown";
+          const stage = deal.StageName || "unknown stage";
+          return `Your biggest deal is ${name} at ${amt} in ${stage}`;
         }
         return "Salesforce not connected.";
       }

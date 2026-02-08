@@ -201,7 +201,7 @@ export class SalesforceClient {
       return {
         total,
         count,
-        text: `${count} open deals, $${Math.round(total / 1000)}k total pipeline.`,
+        text: `${count} open deals worth ${Math.round(total / 1000)} thousand in total pipeline`,
       };
     } catch (error) {
       log.error('[Salesforce] getPipeline error:', error.message);
