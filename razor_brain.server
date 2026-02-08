@@ -1,0 +1,1264 @@
+
+> razor-voice-service@1.0.0 start
+> node src/index.js
+
+[36m06:00:29.426[0m [1m[IntegrationConfig][0m fellow: disabled (missing required keys)
+[36m06:00:29.427[0m [1m[IntegrationConfig][0m Enabled integrations: salesloft, salesforce, google, braveSearch
+[36m06:00:29.439[0m [1m[Google][0m GoogleClient initialised (gog CLI, account=alrazi@telnyx.com)
+[36m06:00:29.439[0m [1m[Capture][0m Software gain: +20dB (10.0x)
+[36m06:00:29.439[0m [1m[TTS][0m TTS provider: telnyx
+[36m06:00:29.440[0m [1m[TTS][0m [TTS] Config: {"provider":"telnyx","voice":"Telnyx.Natural.boulder","model":"n/a","maxChars":100,"pacing":{"urgent":{"rate":1.05,"pitch":"+2st","pauseMs":200},"normal":{"rate":1,"pitch":"+0st","pauseMs":400},"calm":{"rate":0.9,"pitch":"-1st","pauseMs":600}}}
+[36m06:00:29.440[0m [1m[TTS][0m [TTS] Voice tier OK: Natural (24kHz/160kbps)
+[MemoryAgent] Wired to state machine — LEARNING triggers reflection
+[36m06:00:29.440[0m [1m[Main][0m 
+[36m06:00:29.440[0m [1m[Main][0m ┌─────────────────────────────────────────┐
+[36m06:00:29.440[0m [1m[Main][0m │  🔪 Razor Voice Assistant                │
+[36m06:00:29.440[0m [1m[Main][0m │  Starting up...                          │
+[36m06:00:29.441[0m [1m[Main][0m └─────────────────────────────────────────┘
+[36m06:00:29.441[0m [1m[Main][0m 
+[36m06:00:29.441[0m [1m[Main][0m [1/5] Initializing voice pipeline...
+[36m06:00:29.441[0m [1m[Pipeline][0m ═══════════════════════════════════════════
+[36m06:00:29.441[0m [1m[Pipeline][0m   Razor Voice Agent – Initializing
+[36m06:00:29.441[0m [1m[Pipeline][0m ═══════════════════════════════════════════
+[36m06:00:29.441[0m [1m[Pipeline][0m → Setting up Bluetooth...
+[36m06:00:29.441[0m [1m[BT][0m Starting Bluetooth monitor for "X8 Pro" (poll every 60s)
+[36m06:00:29.478[0m [1m[BT][0m Found X8 Pro → 1c-2c-e0-05-1a-84
+[36m06:00:29.538[0m [1m[BT][0m Audio input set to "X8 Pro"
+[36m06:00:29.570[0m [1m[BT][0m Audio output set to "X8 Pro"
+[36m06:00:29.571[0m [1m[Pipeline][0m → Setting up wake word detection...
+[36m06:00:29.571[0m [1m[WakeWord][0m Strategy: VAD + Deepgram transcript (fallback)
+[36m06:00:29.571[0m [1m[Pipeline][0m → Preloading ack audio...
+[36m06:00:29.571[0m [1m[AckPlayer][0m Preloading acknowledgment audio...
+[36m06:00:29.571[0m [1m[AckPlayer][0m Ready with 8 acks
+[36m06:00:29.571[0m [1m[Pipeline][0m ═══════════════════════════════════════════
+[36m06:00:29.571[0m [1m[Pipeline][0m   Wake word strategy: transcript
+[36m06:00:29.571[0m [1m[Pipeline][0m   TTS provider: telnyx
+[36m06:00:29.571[0m [1m[Pipeline][0m   Bluetooth: connected ✓
+[36m06:00:29.571[0m [1m[Pipeline][0m ═══════════════════════════════════════════
+[36m06:00:29.604[0m [1m[BT][0m Bluetooth output LOCKED (re-enforcing every 10s)
+[36m06:00:29.604[0m [1m[Main][0m [2/5] Connecting to brain server...
+[36m06:00:29.604[0m [1m[BrainConnector][0m Connecting to brain at ws://127.0.0.1:8780/ws...
+[36m06:00:29.610[0m [1m[BrainConnector][0m Connected to brain server
+[36m06:00:29.610[0m [1m[Main][0m 🧠 Brain server connected
+[36m06:00:29.610[0m [1m[Main][0m Brain connected ✓
+[36m06:00:29.610[0m [1m[Main][0m [3/5] Initializing integrations...
+[36m06:00:29.610[0m [1m[IntegrationManager][0m Initialising integrations…
+[36m06:00:29.610[0m [1m[IntegrationConfig][0m fellow: disabled (missing required keys)
+[36m06:00:29.610[0m [1m[Salesloft][0m SalesloftClient initialised (user_id=89440)
+[36m06:00:29.610[0m [1m[IntegrationManager][0m salesloft: ready
+[36m06:00:29.610[0m [1m[Main][0m Integration ready: salesloft
+[36m06:00:29.610[0m [1m[Salesforce][0m Using sf CLI with org alias: telnyx-prod
+[36m06:00:29.610[0m [1m[Salesforce][0m Validating sf CLI connectivity (org: telnyx-prod)
+[36m06:00:31.904[0m [1m[Salesforce][0m Connected via sf CLI — org validated (1 record(s))
+[36m06:00:31.904[0m [1m[IntegrationManager][0m salesforce: ready
+[36m06:00:31.904[0m [1m[Main][0m Integration ready: salesforce
+[36m06:00:31.904[0m [1m[IntegrationManager][0m google: ready
+[36m06:00:31.904[0m [1m[Main][0m Integration ready: google
+[36m06:00:31.905[0m [1m[BraveSearch][0m BraveSearchClient initialised
+[36m06:00:31.905[0m [1m[IntegrationManager][0m braveSearch: ready
+[36m06:00:31.905[0m [1m[Main][0m Integration ready: braveSearch
+[36m06:00:31.905[0m [1m[IntegrationManager][0m Initialisation complete — live services: salesloft, salesforce, google, braveSearch
+[36m06:00:31.905[0m [1m[Main][0m Integrations: salesloft, salesforce, google, braveSearch
+[36m06:00:31.905[0m [1m[Main][0m [4/5] Starting intelligence monitor...
+[36m06:00:31.905[0m [1m[Intelligence][0m Starting monitor (60s interval)
+[36m06:00:31.925[0m [1m[Main][0m [5/5] Starting pipeline...
+[36m06:00:31.925[0m [1m[Pipeline][0m Starting voice pipeline...
+[36m06:00:31.925[0m [1m[Capture][0m Starting mic capture: 16000Hz, 1ch, 16-bit
+[36m06:00:31.926[0m [1m[Capture][0m Mic capture started ✓
+[36m06:00:31.926[0m [1m[Pipeline][0m State: IDLE → LISTENING [pipeline_start]
+]0;Razor [LISTENING][36m06:00:31.927[0m [1m[Pipeline][0m 🎙  Razor is listening. Say "Razor" to activate.
+[36m06:00:31.927[0m [1m[Main][0m 
+[36m06:00:31.927[0m [1m[Main][0m ┌─────────────────────────────────────────┐
+[36m06:00:31.927[0m [1m[Main][0m │  🎙  Razor is running                    │
+[36m06:00:31.927[0m [1m[Main][0m │  Say "Razor" followed by a command       │
+[36m06:00:31.927[0m [1m[Main][0m │                                          │
+[36m06:00:31.927[0m [1m[Main][0m │  Brain:        ✓ connected             │
+[36m06:00:31.927[0m [1m[Main][0m │  Integrations: 4 active               │
+[36m06:00:31.927[0m [1m[Main][0m │  Intelligence: ✓ monitoring              │
+[36m06:00:31.927[0m [1m[Main][0m │  Ack Player:   ✓ 8 acks              │
+[36m06:00:31.928[0m [1m[Main][0m │  Memory:       28 interactions          │
+[36m06:00:31.928[0m [1m[Main][0m │  Known:        1 contacts, 1 accounts    │
+[36m06:00:31.928[0m [1m[Main][0m │  Press Ctrl+C to stop                    │
+[36m06:00:31.928[0m [1m[Main][0m └─────────────────────────────────────────┘
+[36m06:00:31.928[0m [1m[Main][0m 
+[36m06:00:33.352[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:00:33.411[0m [1m[AlertQueue][0m Added: email_open from Aniket Jain (score: 50)
+[36m06:00:33.411[0m [1m[AlertQueue][0m Added: email_click from Christopher Montana (score: 75)
+[36m06:00:33.411[0m [1m[AlertQueue][0m Added: email_open from Erick Fettingis (score: 50)
+[36m06:00:33.411[0m [1m[AlertQueue][0m Added: email_reply from Daria Korshunova (score: 100)
+[36m06:00:33.411[0m [1m[AlertQueue][0m Added: email_open from Daria Korshunova (score: 50)
+[36m06:00:33.411[0m [1m[AlertQueue][0m Added: email_open from Jennifer Briggs (score: 50)
+[36m06:00:33.411[0m [1m[AlertQueue][0m Added: email_open from Seth Wright (score: 50)
+[36m06:00:33.411[0m [1m[AlertQueue][0m Added: email_click from Clinton Strickland (score: 75)
+[36m06:00:33.411[0m [1m[AlertQueue][0m Added: email_open from Brent Linz (score: 50)
+[36m06:00:33.411[0m [1m[AlertQueue][0m Added: email_click from Efrain Martinez (score: 75)
+[36m06:00:33.411[0m [1m[AlertQueue][0m Added: email_click from Jerome O'Grady (score: 75)
+[36m06:00:33.411[0m [1m[AlertQueue][0m Added: email_open from Robert Taha (score: 50)
+[36m06:00:33.411[0m [1m[AlertQueue][0m Added: email_open from Bradley Blaies (score: 50)
+[36m06:00:33.411[0m [1m[Intelligence][0m Poll #1: 29 signals detected, 13 queued
+[36m06:00:34.380[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:00:36.412[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[36m06:00:38.211[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[33m06:00:39.121[0m [1m[BrainConnector][0m Brain connection closed: 1006 
+[33m06:00:39.121[0m [1m[Main][0m 🧠 Brain server disconnected — offline mode
+[36m06:00:39.121[0m [1m[BrainConnector][0m Reconnecting in 1143ms (attempt 1/20)
+[36m06:00:39.668[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:00:40.012[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:00:40.265[0m [1m[BrainConnector][0m Connecting to brain at ws://127.0.0.1:8780/ws...
+[31m06:00:40.269[0m [1m[BrainConnector][0m Brain WebSocket error: connect ECONNREFUSED 127.0.0.1:8780
+[33m06:00:40.269[0m [1m[BrainConnector][0m Brain connection closed: 1006 
+[33m06:00:40.269[0m [1m[Main][0m 🧠 Brain server disconnected — offline mode
+[36m06:00:40.269[0m [1m[BrainConnector][0m Reconnecting in 2464ms (attempt 2/20)
+[36m06:00:42.572[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:00:42.733[0m [1m[BrainConnector][0m Connecting to brain at ws://127.0.0.1:8780/ws...
+[31m06:00:42.734[0m [1m[BrainConnector][0m Brain WebSocket error: connect ECONNREFUSED 127.0.0.1:8780
+[33m06:00:42.734[0m [1m[BrainConnector][0m Brain connection closed: 1006 
+[33m06:00:42.734[0m [1m[Main][0m 🧠 Brain server disconnected — offline mode
+[36m06:00:42.734[0m [1m[BrainConnector][0m Reconnecting in 4020ms (attempt 3/20)
+[36m06:00:46.754[0m [1m[BrainConnector][0m Connecting to brain at ws://127.0.0.1:8780/ws...
+[31m06:00:46.754[0m [1m[BrainConnector][0m Brain WebSocket error: connect ECONNREFUSED 127.0.0.1:8780
+[33m06:00:46.754[0m [1m[BrainConnector][0m Brain connection closed: 1006 
+[33m06:00:46.754[0m [1m[Main][0m 🧠 Brain server disconnected — offline mode
+[36m06:00:46.754[0m [1m[BrainConnector][0m Reconnecting in 8311ms (attempt 4/20)
+[36m06:00:49.674[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:00:55.067[0m [1m[BrainConnector][0m Connecting to brain at ws://127.0.0.1:8780/ws...
+[36m06:00:55.077[0m [1m[BrainConnector][0m Connected to brain server
+[36m06:00:55.077[0m [1m[Main][0m 🧠 Brain server connected
+[36m06:00:55.112[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:01:07.133[0m [1m[VAD][0m Speech ended: 1.4s, 48KB
+[36m06:01:08.171[0m [1m[WakeTranscript][0m Transcript: "Razor."
+[36m06:01:08.171[0m [1m[WakeTranscript][0m 🎯 Wake word detected! Pattern: "razor", Command: "(waiting for command)"
+[36m06:01:08.172[0m [1m[Pipeline][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:01:08.172[0m [1m[Pipeline][0m   🎯 WAKE WORD DETECTED
+[36m06:01:08.172[0m [1m[Pipeline][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:01:08.172[0m [1m[Attention][0m AWAKE (wake_word) — listening for 5 minutes without wake word
+[36m06:01:08.172[0m [1m[Main][0m Attention awake (wake_word) — 5 min window
+[36m06:01:08.172[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [wake_word]
+]0;Razor [PROCESSING][36m06:01:08.172[0m [1m[Pipeline][0m Waiting for command...
+[36m06:01:08.804[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:01:08.804[0m [1m[Pipeline][0m Replaying 3 buffered audio chunks into STT
+[36m06:01:09.193[0m [1m[VAD][0m Speech ended: 1.4s, 48KB
+[36m06:01:09.434[0m [1m[STT][0m Final: "Fine." (confidence: 92%)
+[36m06:01:09.434[0m [1m[Pipeline][0m Command captured: "Fine."
+[36m06:01:09.435[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:01:09.435[0m [1m[Main][0m   📝 "Fine."
+[36m06:01:09.435[0m [1m[Main][0m   Source: streaming-stt
+[36m06:01:09.435[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:01:09.670[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[33m06:01:12.056[0m [1m[BrainConnector][0m Slow brain response: 2618ms
+[36m06:01:12.057[0m [1m[Main][0m Brain response (2613.5969161987305ms): "Ready to slice through some sales complexity. What's on your mind?"
+[36m06:01:12.058[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:01:12.058[0m [1m[TTS][0m Truncated TTS text to 86 chars for speed
+[36m06:01:12.058[0m [1m[TTS][0m Synthesizing (telnyx, pace=calm): "Ready to slice through some sales complexity. What's on your mind? Need pipeline..."
+[36m06:01:12.983[0m [1m[TTS][0m TTS complete: 95KB, 925ms
+[36m06:01:13.178[0m [1m[Playback][0m Device BEFORE play: X8 Pro
+[36m06:01:13.178[0m [1m[Playback][0m Playing audio: razor-tts-3fa85bb9.mp3 (pace=calm, rate=0.9)
+[36m06:01:19.516[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:01:19.516[0m [1m[Playback][0m Playback finished
+[36m06:01:19.517[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [tts_finished]
+]0;Razor [LISTENING][36m06:01:19.517[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:01:20.111[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:01:20.111[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:01:20.111[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:01:20.740[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:01:20.740[0m [1m[Pipeline][0m Replaying 3 buffered audio chunks into STT
+  🎤 Biggest deal.                    [36m06:01:21.985[0m [1m[STT][0m Final: "Biggest deal." (confidence: 99%)
+[36m06:01:21.985[0m [1m[Pipeline][0m Command captured: "Biggest deal."
+[36m06:01:21.986[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:01:21.986[0m [1m[Main][0m   📝 "Biggest deal."
+[36m06:01:21.986[0m [1m[Main][0m   Source: streaming-stt
+[36m06:01:21.986[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:01:21.992[0m [1m[VAD][0m Speech ended: 2.1s, 72KB
+[33m06:01:24.318[0m [1m[BrainConnector][0m Slow brain response: 2330ms
+[36m06:01:24.318[0m [1m[Main][0m Brain response (2327.4588584899902ms): "."
+[36m06:01:24.318[0m [1m[Main][0m Brain actions: [{"action":"get_biggest_deal","params":{}}]
+[36m06:01:24.318[0m [1m[Main][0m Fetching data for 1 action(s)...
+[36m06:01:24.319[0m [1m[Main][0m Dispatching action: get_biggest_deal
+[36m06:01:25.551[0m [1m[Context][0m Turn added. Action: get_biggest_deal, Entities: 
+[36m06:01:25.552[0m [1m[Main][0m Data response: "Biggest deal is Structurely at 60k, currently in 2: Proposal and Quoting"
+[36m06:01:25.552[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:01:25.552[0m [1m[TTS][0m Truncated TTS text to 100 chars for speed
+[36m06:01:25.552[0m [1m[TTS][0m Synthesizing (telnyx, pace=calm): "Biggest deal is Structurely at 60k, currently in 2: Proposal and Quoting Want me..."
+[36m06:01:26.761[0m [1m[TTS][0m TTS complete: 120KB, 1209ms
+[36m06:01:26.912[0m [1m[Playback][0m Device BEFORE play: X8 Pro
+[36m06:01:26.912[0m [1m[Playback][0m Playing audio: razor-tts-a53da458.mp3 (pace=calm, rate=0.9)
+[36m06:01:33.988[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:01:33.988[0m [1m[Playback][0m Playback finished
+[36m06:01:33.988[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [tts_finished]
+]0;Razor [LISTENING][36m06:01:33.989[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:01:39.311[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:01:39.311[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:01:39.311[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:01:40.086[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:01:40.086[0m [1m[Pipeline][0m Replaying 4 buffered audio chunks into STT
+  🎤 Much pipeline?                    [36m06:01:40.932[0m [1m[VAD][0m Speech ended: 1.9s, 64KB
+[36m06:01:41.335[0m [1m[STT][0m Final: "Much pipeline?" (confidence: 100%)
+[36m06:01:41.335[0m [1m[Pipeline][0m Command captured: "Much pipeline?"
+[36m06:01:41.336[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:01:41.336[0m [1m[Main][0m   📝 "Much pipeline?"
+[36m06:01:41.336[0m [1m[Main][0m   Source: streaming-stt
+[36m06:01:41.336[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:01:41.336[0m [1m[Main][0m Mood: curious (confidence: 0.5)
+[33m06:01:43.471[0m [1m[BrainConnector][0m Slow brain response: 2135ms
+[36m06:01:43.471[0m [1m[Main][0m Brain response (2130.957841873169ms): "."
+[36m06:01:43.471[0m [1m[Main][0m Brain actions: [{"action":"get_pipeline","params":{}}]
+[36m06:01:43.471[0m [1m[Main][0m Fetching data for 1 action(s)...
+[36m06:01:43.471[0m [1m[Main][0m Dispatching action: get_pipeline
+[36m06:01:46.945[0m [1m[Context][0m Turn added. Action: get_pipeline, Entities: 
+[36m06:01:46.945[0m [1m[Main][0m Data response: "76k in pipeline across nine deals."
+[36m06:01:46.946[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:01:46.946[0m [1m[TTS][0m Synthesizing (telnyx, pace=normal): "So, 76k in pipeline across nine deals. Want me to break this down by stage or pr..."
+[36m06:01:48.535[0m [1m[TTS][0m TTS complete: 119KB, 1589ms
+[36m06:01:48.721[0m [1m[Playback][0m Device BEFORE play: X8 Pro
+[36m06:01:48.721[0m [1m[Playback][0m Playing audio: razor-tts-6bb42155.mp3 (pace=normal, rate=1)
+[36m06:01:55.820[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:01:55.820[0m [1m[Playback][0m Playback finished
+[36m06:01:55.820[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [tts_finished]
+]0;Razor [LISTENING][36m06:01:55.820[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:01:59.676[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:02:00.051[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:02:00.052[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:02:00.052[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:02:00.792[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:02:00.793[0m [1m[Pipeline][0m Replaying 3 buffered audio chunks into STT
+  🎤 Closing this week                    [36m06:02:01.932[0m [1m[VAD][0m Speech ended: 2.1s, 72KB
+[36m06:02:02.237[0m [1m[STT][0m Final: "Closing this week," (confidence: 92%)
+[36m06:02:02.237[0m [1m[Pipeline][0m Command captured: "Closing this week,"
+[36m06:02:02.238[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:02:02.238[0m [1m[Main][0m   📝 "Closing this week,"
+[36m06:02:02.238[0m [1m[Main][0m   Source: streaming-stt
+[36m06:02:02.238[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[33m06:02:04.685[0m [1m[BrainConnector][0m Slow brain response: 2447ms
+[36m06:02:04.685[0m [1m[Main][0m Brain response (2443.610191345215ms): "."
+[36m06:02:04.685[0m [1m[Main][0m Brain actions: [{"action":"get_deals_closing","params":{"period":"this_week"}}]
+[36m06:02:04.685[0m [1m[Main][0m Fetching data for 1 action(s)...
+[36m06:02:04.685[0m [1m[Main][0m Dispatching action: get_deals_closing
+[36m06:02:05.904[0m [1m[Context][0m Turn added. Action: get_deals_closing, Entities: 
+[36m06:02:05.904[0m [1m[Main][0m Data response: "Nothing closing this week."
+[36m06:02:05.905[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:02:05.905[0m [1m[TTS][0m Synthesizing (telnyx, pace=calm): "Nothing closing this week. Want me to break these down by potential revenue?"
+[36m06:02:06.934[0m [1m[TTS][0m TTS complete: 78KB, 1029ms
+[36m06:02:07.101[0m [1m[Playback][0m Device BEFORE play: X8 Pro
+[36m06:02:07.101[0m [1m[Playback][0m Playing audio: razor-tts-c1e3c2b4.mp3 (pace=calm, rate=0.9)
+[36m06:02:12.394[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:02:12.394[0m [1m[Playback][0m Playback finished
+[36m06:02:12.394[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [tts_finished]
+]0;Razor [LISTENING][36m06:02:12.394[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:02:13.352[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:02:13.352[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:02:13.352[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:02:14.025[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:02:14.025[0m [1m[Pipeline][0m Replaying 3 buffered audio chunks into STT
+[36m06:02:14.732[0m [1m[VAD][0m Speech ended: 1.6s, 56KB
+[36m06:02:15.065[0m [1m[STT][0m Final: "This month." (confidence: 86%)
+[36m06:02:15.065[0m [1m[Pipeline][0m Command captured: "This month."
+[36m06:02:15.066[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:02:15.066[0m [1m[Main][0m   📝 "This month."
+[36m06:02:15.066[0m [1m[Main][0m   Source: streaming-stt
+[36m06:02:15.066[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[33m06:02:17.274[0m [1m[BrainConnector][0m Slow brain response: 2208ms
+[36m06:02:17.274[0m [1m[Main][0m Brain response (2204.4689655303955ms): "."
+[36m06:02:17.274[0m [1m[Main][0m Brain actions: [{"action":"get_deals_closing","params":{"period":"this_month"}}]
+[36m06:02:17.274[0m [1m[Main][0m Fetching data for 1 action(s)...
+[36m06:02:17.274[0m [1m[Main][0m Dispatching action: get_deals_closing
+[36m06:02:18.507[0m [1m[Context][0m Turn added. Action: get_deals_closing, Entities: 
+[36m06:02:18.507[0m [1m[Main][0m Data response: "2 deals closing this month, Q4, goldlevelmarketing.com"
+[36m06:02:18.508[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:02:18.508[0m [1m[TTS][0m Truncated TTS text to 100 chars for speed
+[36m06:02:18.508[0m [1m[TTS][0m Synthesizing (telnyx, pace=calm): "2 deals closing this month, Q4, goldlevelmarketing.com Want me to break these do..."
+[36m06:02:19.763[0m [1m[TTS][0m TTS complete: 137KB, 1255ms
+[36m06:02:19.935[0m [1m[Playback][0m Device BEFORE play: X8 Pro
+[36m06:02:19.935[0m [1m[Playback][0m Playing audio: razor-tts-60b85779.mp3 (pace=calm, rate=0.9)
+[36m06:02:28.535[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:02:28.535[0m [1m[Playback][0m Playback finished
+[36m06:02:28.535[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [tts_finished]
+]0;Razor [LISTENING][36m06:02:28.535[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:02:31.272[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:02:31.272[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:02:31.272[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:02:32.016[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:02:32.016[0m [1m[Pipeline][0m Replaying 3 buffered audio chunks into STT
+[36m06:02:32.653[0m [1m[VAD][0m Speech ended: 1.6s, 56KB
+  🎤 Pipeline.                      🎤 Pipeline.                      🎤 Pipeline.                      🎤 Pipeline.                    [36m06:02:37.706[0m [1m[STT][0m Final: "Pipeline." (confidence: 73%)
+[36m06:02:37.707[0m [1m[Pipeline][0m Command captured: "Pipeline."
+[36m06:02:37.707[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:02:37.707[0m [1m[Main][0m   📝 "Pipeline."
+[36m06:02:37.707[0m [1m[Main][0m   Source: streaming-stt
+[36m06:02:37.707[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[33m06:02:39.884[0m [1m[BrainConnector][0m Slow brain response: 2177ms
+[36m06:02:39.884[0m [1m[Main][0m Brain response (2174.132823944092ms): "."
+[36m06:02:39.884[0m [1m[Main][0m Brain actions: [{"action":"get_pipeline","params":{}}]
+[36m06:02:39.884[0m [1m[Main][0m Fetching data for 1 action(s)...
+[36m06:02:39.884[0m [1m[Main][0m Dispatching action: get_pipeline
+[36m06:02:42.317[0m [1m[Context][0m Turn added. Action: get_pipeline, Entities: 
+[36m06:02:42.317[0m [1m[Main][0m Data response: "76k in pipeline across nine deals."
+[36m06:02:42.318[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:02:42.318[0m [1m[TTS][0m Synthesizing (telnyx, pace=calm): "76k in pipeline across nine deals. Want me to break down where we're strongest?"
+[36m06:02:43.741[0m [1m[TTS][0m TTS complete: 94KB, 1423ms
+[36m06:02:43.917[0m [1m[Playback][0m Device BEFORE play: X8 Pro
+[36m06:02:43.917[0m [1m[Playback][0m Playing audio: razor-tts-3d843776.mp3 (pace=calm, rate=0.9)
+[36m06:02:49.976[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:02:49.976[0m [1m[Playback][0m Playback finished
+[36m06:02:49.976[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [tts_finished]
+]0;Razor [LISTENING][36m06:02:49.976[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:02:50.992[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:02:50.992[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:02:50.992[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:02:51.758[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:02:51.758[0m [1m[Pipeline][0m Replaying 4 buffered audio chunks into STT
+[36m06:02:52.613[0m [1m[VAD][0m Speech ended: 1.9s, 64KB
+[36m06:02:52.820[0m [1m[STT][0m Final: "Biggest deal." (confidence: 87%)
+[36m06:02:52.820[0m [1m[Pipeline][0m Command captured: "Biggest deal."
+[36m06:02:52.821[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:02:52.821[0m [1m[Main][0m   📝 "Biggest deal."
+[36m06:02:52.821[0m [1m[Main][0m   Source: streaming-stt
+[36m06:02:52.821[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[33m06:02:54.690[0m [1m[BrainConnector][0m Slow brain response: 1869ms
+[36m06:02:54.690[0m [1m[Main][0m Brain response (1866.1177158355713ms): "."
+[36m06:02:54.690[0m [1m[Main][0m Brain actions: [{"action":"get_biggest_deal","params":{}}]
+[36m06:02:54.690[0m [1m[Main][0m Fetching data for 1 action(s)...
+[36m06:02:54.691[0m [1m[Main][0m Dispatching action: get_biggest_deal
+[36m06:02:55.906[0m [1m[Context][0m Turn added. Action: get_biggest_deal, Entities: 
+[36m06:02:55.906[0m [1m[Main][0m Data response: "Biggest deal is Structurely at 60k, currently in 2: Proposal and Quoting"
+[36m06:02:55.906[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:02:55.906[0m [1m[TTS][0m Synthesizing (telnyx, pace=calm): "So, biggest deal is Structurely at 60k, currently in 2: Proposal and Quoting"
+[36m06:02:56.826[0m [1m[TTS][0m TTS complete: 114KB, 920ms
+[36m06:02:56.992[0m [1m[Playback][0m Device BEFORE play: X8 Pro
+[36m06:02:56.992[0m [1m[Playback][0m Playing audio: razor-tts-eda5a260.mp3 (pace=calm, rate=0.9)
+[36m06:03:03.841[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:03:03.841[0m [1m[Playback][0m Playback finished
+[36m06:03:03.841[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [tts_finished]
+]0;Razor [LISTENING][36m06:03:03.841[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:03:05.072[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:03:05.072[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:03:05.072[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:03:05.699[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:03:05.700[0m [1m[Pipeline][0m Replaying 3 buffered audio chunks into STT
+  🎤 Closing this week.                    [36m06:03:06.934[0m [1m[STT][0m Final: "Closing this week," (confidence: 77%)
+[36m06:03:06.934[0m [1m[Pipeline][0m Command captured: "Closing this week,"
+[36m06:03:06.934[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:03:06.935[0m [1m[Main][0m   📝 "Closing this week,"
+[36m06:03:06.935[0m [1m[Main][0m   Source: streaming-stt
+[36m06:03:06.935[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:03:06.953[0m [1m[VAD][0m Speech ended: 2.1s, 72KB
+[33m06:03:08.999[0m [1m[BrainConnector][0m Slow brain response: 2064ms
+[36m06:03:08.999[0m [1m[Main][0m Brain response (2062.0946884155273ms): "."
+[36m06:03:08.999[0m [1m[Main][0m Brain actions: [{"action":"get_deals_closing","params":{"period":"this_week"}}]
+[36m06:03:08.999[0m [1m[Main][0m Fetching data for 1 action(s)...
+[36m06:03:08.999[0m [1m[Main][0m Dispatching action: get_deals_closing
+[36m06:03:10.201[0m [1m[Context][0m Turn added. Action: get_deals_closing, Entities: 
+[36m06:03:10.201[0m [1m[Main][0m Data response: "Nothing closing this week."
+[36m06:03:10.201[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:03:10.201[0m [1m[TTS][0m Synthesizing (telnyx, pace=calm): "Nothing closing this week. Want me to break these down by probability of closing..."
+[36m06:03:11.128[0m [1m[TTS][0m TTS complete: 85KB, 927ms
+[36m06:03:11.294[0m [1m[Playback][0m Device BEFORE play: X8 Pro
+[36m06:03:11.294[0m [1m[Playback][0m Playing audio: razor-tts-8566989d.mp3 (pace=calm, rate=0.9)
+[36m06:03:17.114[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:03:17.114[0m [1m[Playback][0m Playback finished
+[36m06:03:17.114[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [tts_finished]
+]0;Razor [LISTENING][36m06:03:17.114[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:03:18.732[0m [1m[VAD][0m Speech ended: 1.4s, 48KB
+[36m06:03:20.345[0m [1m[WakeTranscript][0m Transcript: "In this month."
+[36m06:03:32.972[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:03:32.972[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:03:32.972[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:03:33.700[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:03:33.701[0m [1m[Pipeline][0m Replaying 3 buffered audio chunks into STT
+[36m06:03:34.593[0m [1m[VAD][0m Speech ended: 1.9s, 64KB
+[36m06:03:34.737[0m [1m[STT][0m Final: "Biggest deal." (confidence: 100%)
+[36m06:03:34.737[0m [1m[Pipeline][0m Command captured: "Biggest deal."
+[36m06:03:34.737[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:03:34.738[0m [1m[Main][0m   📝 "Biggest deal."
+[36m06:03:34.738[0m [1m[Main][0m   Source: streaming-stt
+[36m06:03:34.738[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[33m06:03:35.928[0m [1m[BrainConnector][0m Slow brain response: 1190ms
+[36m06:03:35.928[0m [1m[Main][0m Brain response (1187.7281665802002ms): "."
+[36m06:03:35.928[0m [1m[Main][0m Brain actions: [{"action":"get_biggest_deal","params":{}}]
+[36m06:03:35.928[0m [1m[Main][0m Fetching data for 1 action(s)...
+[36m06:03:35.928[0m [1m[Main][0m Dispatching action: get_biggest_deal
+[36m06:03:37.135[0m [1m[Context][0m Turn added. Action: get_biggest_deal, Entities: 
+[36m06:03:37.136[0m [1m[Main][0m Data response: "Structurely, 60k, 2: Proposal and Quoting stage"
+[36m06:03:37.136[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:03:37.136[0m [1m[TTS][0m Synthesizing (telnyx, pace=calm): "Structurely, 60k, 2: Proposal and Quoting stage"
+[36m06:03:38.214[0m [1m[TTS][0m TTS complete: 79KB, 1078ms
+[36m06:03:38.400[0m [1m[Playback][0m Device BEFORE play: X8 Pro
+[36m06:03:38.400[0m [1m[Playback][0m Playing audio: razor-tts-e90d9fbe.mp3 (pace=calm, rate=0.9)
+[36m06:03:43.978[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:03:43.978[0m [1m[Playback][0m Playback finished
+[36m06:03:43.978[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [tts_finished]
+]0;Razor [LISTENING][36m06:03:43.978[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:03:52.932[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:03:52.932[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:03:52.933[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:03:54.054[0m [1m[VAD][0m Speech ended: 1.4s, 48KB
+[36m06:03:54.526[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:03:54.526[0m [1m[Pipeline][0m Replaying 7 buffered audio chunks into STT
+[36m06:03:55.358[0m [1m[STT][0m Final: "Blind." (confidence: 76%)
+[36m06:03:55.358[0m [1m[Pipeline][0m Command captured: "Blind."
+[36m06:03:55.358[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:03:55.358[0m [1m[Main][0m   📝 "Blind."
+[36m06:03:55.358[0m [1m[Main][0m   Source: streaming-stt
+[36m06:03:55.358[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[33m06:03:58.458[0m [1m[BrainConnector][0m Slow brain response: 3100ms
+[36m06:03:58.458[0m [1m[Main][0m Brain response (3097.2869396209717ms): "Sounds like you want me to help you see clearly. Let's pull up your pipeline and..."
+[36m06:03:58.458[0m [1m[Main][0m Brain actions: [{"action":"get_pipeline","params":{}}]
+[36m06:03:58.458[0m [1m[Main][0m Fetching data for 1 action(s)...
+[36m06:03:58.459[0m [1m[Main][0m Dispatching action: get_pipeline
+[36m06:04:00.881[0m [1m[Context][0m Turn added. Action: get_pipeline, Entities: 
+[36m06:04:00.881[0m [1m[Main][0m Data response: "76k in pipeline across nine deals."
+[36m06:04:00.881[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:04:00.881[0m [1m[TTS][0m Synthesizing (telnyx, pace=calm): "76k in pipeline across nine deals. Want me to highlight the deals that need atte..."
+[36m06:04:01.929[0m [1m[TTS][0m TTS complete: 105KB, 1048ms
+[36m06:04:02.095[0m [1m[Playback][0m Device BEFORE play: X8 Pro
+[36m06:04:02.095[0m [1m[Playback][0m Playing audio: razor-tts-43b93160.mp3 (pace=calm, rate=0.9)
+[36m06:04:08.905[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:04:08.905[0m [1m[Playback][0m Playback finished
+[36m06:04:08.905[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [tts_finished]
+]0;Razor [LISTENING][36m06:04:08.905[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:04:11.892[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:04:11.892[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:04:11.892[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:04:12.601[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:04:12.601[0m [1m[Pipeline][0m Replaying 3 buffered audio chunks into STT
+  🎤 Closing this week.                    [36m06:04:13.513[0m [1m[VAD][0m Speech ended: 1.9s, 64KB
+[36m06:04:13.841[0m [1m[STT][0m Final: "Closing this week," (confidence: 78%)
+[36m06:04:13.841[0m [1m[Pipeline][0m Command captured: "Closing this week,"
+[36m06:04:13.841[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:04:13.841[0m [1m[Main][0m   📝 "Closing this week,"
+[36m06:04:13.841[0m [1m[Main][0m   Source: streaming-stt
+[36m06:04:13.841[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[33m06:04:17.076[0m [1m[BrainConnector][0m Slow brain response: 3234ms
+[36m06:04:17.076[0m [1m[Main][0m Brain response (3230.8950424194336ms): "."
+[36m06:04:17.077[0m [1m[Main][0m Brain actions: [{"action":"get_deals_closing","params":{"period":"this_week"}}]
+[36m06:04:17.077[0m [1m[Main][0m Fetching data for 1 action(s)...
+[36m06:04:17.077[0m [1m[Main][0m Dispatching action: get_deals_closing
+[36m06:04:18.317[0m [1m[Context][0m Turn added. Action: get_deals_closing, Entities: 
+[36m06:04:18.317[0m [1m[Main][0m Data response: "Nothing closing this week."
+[36m06:04:18.317[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:04:18.317[0m [1m[TTS][0m Synthesizing (telnyx, pace=calm): "Nothing closing this week. Want me to break these down by potential revenue?"
+[36m06:04:19.417[0m [1m[TTS][0m TTS complete: 78KB, 1100ms
+[36m06:04:19.618[0m [1m[Playback][0m Device BEFORE play: X8 Pro
+[36m06:04:19.618[0m [1m[Playback][0m Playing audio: razor-tts-073e3a46.mp3 (pace=calm, rate=0.9)
+[36m06:04:24.950[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:04:24.950[0m [1m[Playback][0m Playback finished
+[36m06:04:24.950[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [tts_finished]
+]0;Razor [LISTENING][36m06:04:24.950[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:04:26.732[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:04:26.733[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:04:26.733[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:04:27.408[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:04:27.409[0m [1m[Pipeline][0m Replaying 3 buffered audio chunks into STT
+  🎤 Closing this month.                    [36m06:04:28.353[0m [1m[VAD][0m Speech ended: 1.9s, 64KB
+[36m06:04:28.652[0m [1m[STT][0m Final: "Closing this month." (confidence: 93%)
+[36m06:04:28.652[0m [1m[Pipeline][0m Command captured: "Closing this month."
+[36m06:04:28.652[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:04:28.652[0m [1m[Main][0m   📝 "Closing this month."
+[36m06:04:28.652[0m [1m[Main][0m   Source: streaming-stt
+[36m06:04:28.652[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[33m06:04:31.570[0m [1m[BrainConnector][0m Slow brain response: 2918ms
+[36m06:04:31.570[0m [1m[Main][0m Brain response (2915.1909351348877ms): "."
+[36m06:04:31.570[0m [1m[Main][0m Brain actions: [{"action":"get_deals_closing","params":{"period":"this_month"}}]
+[36m06:04:31.570[0m [1m[Main][0m Fetching data for 1 action(s)...
+[36m06:04:31.570[0m [1m[Main][0m Dispatching action: get_deals_closing
+[36m06:04:32.798[0m [1m[Context][0m Turn added. Action: get_deals_closing, Entities: 
+[36m06:04:32.798[0m [1m[Main][0m Data response: "2 on deck for this month, Q4, goldlevelmarketing.com"
+[36m06:04:32.798[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:04:32.798[0m [1m[TTS][0m Truncated TTS text to 100 chars for speed
+[36m06:04:32.798[0m [1m[TTS][0m Synthesizing (telnyx, pace=calm): "Well, 2 on deck for this month, Q4, goldlevelmarketing.com Want me to break thes..."
+[36m06:04:34.107[0m [1m[TTS][0m TTS complete: 126KB, 1308ms
+[33m06:04:34.261[0m [1m[Playback][0m Device mismatch: "Mac mini Speakers" — retrying switch to "X8 Pro"
+[36m06:04:34.383[0m [1m[Playback][0m Device BEFORE play: Mac mini Speakers
+[36m06:04:34.383[0m [1m[Playback][0m Playing audio: razor-tts-058d8a1f.mp3 (pace=calm, rate=0.9)
+[36m06:04:42.476[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:04:42.476[0m [1m[Playback][0m Playback finished
+[36m06:04:42.476[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [tts_finished]
+]0;Razor [LISTENING][36m06:04:42.476[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:04:45.412[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:04:45.412[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:04:45.413[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:04:46.098[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:04:46.098[0m [1m[Pipeline][0m Replaying 3 buffered audio chunks into STT
+[36m06:04:46.533[0m [1m[VAD][0m Speech ended: 1.4s, 48KB
+[36m06:04:46.928[0m [1m[STT][0m Final: "This deal" (confidence: 99%)
+[36m06:04:47.730[0m [1m[Pipeline][0m Command captured: "This deal"
+[36m06:04:47.730[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:04:47.730[0m [1m[Main][0m   📝 "This deal"
+[36m06:04:47.730[0m [1m[Main][0m   Source: streaming-stt-sentence-timeout
+[36m06:04:47.730[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[33m06:04:50.224[0m [1m[BrainConnector][0m Slow brain response: 2493ms
+[36m06:04:50.224[0m [1m[Main][0m Brain response (2490.2820587158203ms): "I noticed you're referencing 'this deal' but I don't have context about which sp..."
+[36m06:04:50.224[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:04:50.225[0m [1m[TTS][0m Truncated TTS text to 100 chars for speed
+[36m06:04:50.225[0m [1m[TTS][0m Synthesizing (telnyx, pace=calm): "I noticed you're referencing 'this deal' but I don't have context about which sp..."
+[36m06:04:51.485[0m [1m[TTS][0m TTS complete: 90KB, 1260ms
+[36m06:04:51.667[0m [1m[Playback][0m Device BEFORE play: X8 Pro
+[36m06:04:51.667[0m [1m[Playback][0m Playing audio: razor-tts-a6e7ba10.mp3 (pace=calm, rate=0.9)
+[36m06:04:57.724[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:04:57.724[0m [1m[Playback][0m Playback finished
+[36m06:04:57.724[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [tts_finished]
+]0;Razor [LISTENING][36m06:04:57.724[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:05:00.352[0m [1m[VAD][0m Speech ended: 2.4s, 80KB
+[36m06:05:01.750[0m [1m[WakeTranscript][0m Transcript: "Biggest deal."
+[36m06:05:14.613[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:05:14.613[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:05:14.613[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:05:15.145[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:05:15.145[0m [1m[Pipeline][0m Replaying 3 buffered audio chunks into STT
+[36m06:05:15.713[0m [1m[VAD][0m Speech ended: 1.4s, 48KB
+  🎤 Hi.                    [33m06:05:23.147[0m [1m[Pipeline][0m Command timeout — no speech after wake word
+[36m06:05:23.148[0m [1m[Pipeline][0m State: PROCESSING → LISTENING [command_timeout]
+]0;Razor [LISTENING][36m06:05:23.148[0m [1m[Main][0m No command received — returning to idle
+[36m06:05:23.370[0m [1m[STT][0m Final: "Pipeline." (confidence: 91%)
+[36m06:05:23.370[0m [1m[Pipeline][0m Command captured: "Pipeline."
+[36m06:05:23.370[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:05:23.370[0m [1m[Main][0m   📝 "Pipeline."
+[36m06:05:23.370[0m [1m[Main][0m   Source: streaming-stt
+[36m06:05:23.370[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:05:23.913[0m [1m[VAD][0m Speech ended: 2.9s, 96KB
+[36m06:05:24.853[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:05:24.853[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:05:24.853[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:05:25.477[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:05:25.477[0m [1m[Pipeline][0m Replaying 3 buffered audio chunks into STT
+[36m06:05:25.568[0m [1m[WakeTranscript][0m Transcript: "Pipeline."
+[33m06:05:25.626[0m [1m[BrainConnector][0m Slow brain response: 2255ms
+[36m06:05:25.627[0m [1m[Main][0m Brain response (2251.523733139038ms): "."
+[36m06:05:25.627[0m [1m[Main][0m Brain actions: [{"action":"get_pipeline","params":{}}]
+[36m06:05:25.627[0m [1m[Main][0m Fetching data for 1 action(s)...
+[36m06:05:25.627[0m [1m[Main][0m Dispatching action: get_pipeline
+[36m06:05:25.694[0m [1m[VAD][0m Speech ended: 1.1s, 40KB
+[36m06:05:28.062[0m [1m[Context][0m Turn added. Action: get_pipeline, Entities: 
+[36m06:05:28.062[0m [1m[Main][0m Data response: "76k in pipeline across nine deals."
+[36m06:05:28.062[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:05:28.062[0m [1m[TTS][0m Synthesizing (telnyx, pace=calm): "76k in pipeline across nine deals. Want me to break down where you're strong or ..."
+[36m06:05:28.253[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[36m06:05:28.967[0m [1m[TTS][0m TTS complete: 107KB, 905ms
+[36m06:05:29.128[0m [1m[Playback][0m Device BEFORE play: X8 Pro
+[36m06:05:29.128[0m [1m[Playback][0m Playing audio: razor-tts-0b0951be.mp3 (pace=calm, rate=0.9)
+[36m06:05:29.678[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[33m06:05:33.479[0m [1m[Pipeline][0m Command timeout — no speech after wake word
+[36m06:05:33.479[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [command_timeout]
+]0;Razor [LISTENING][36m06:05:33.479[0m [1m[Main][0m No command received — returning to idle
+[36m06:05:36.446[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:05:36.446[0m [1m[Playback][0m Playback finished
+[36m06:05:36.446[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:05:37.133[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:05:37.133[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:05:37.133[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:05:37.652[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:05:37.652[0m [1m[Pipeline][0m Replaying 2 buffered audio chunks into STT
+[36m06:05:38.254[0m [1m[VAD][0m Speech ended: 1.4s, 48KB
+  🎤 Deal.                      🎤 Deal.                      🎤 Deal.                      🎤 Deal.                    [36m06:05:44.488[0m [1m[STT][0m Final: "Deal." (confidence: 68%)
+[36m06:05:44.488[0m [1m[Pipeline][0m Command captured: "Deal."
+[36m06:05:44.488[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:05:44.488[0m [1m[Main][0m   📝 "Deal."
+[36m06:05:44.488[0m [1m[Main][0m   Source: streaming-stt
+[36m06:05:44.488[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:05:44.894[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[33m06:05:46.249[0m [1m[BrainConnector][0m Slow brain response: 1761ms
+[36m06:05:46.249[0m [1m[Main][0m Brain response (1759.7246170043945ms): "}],"followUp":"Want me to break down what's making this deal significant?"}"
+[36m06:05:46.249[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:05:46.249[0m [1m[TTS][0m Synthesizing (telnyx, pace=calm): "Well, }],"followUp":"Want me to break down what's making this deal significant?"..."
+[36m06:05:46.434[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:05:47.500[0m [1m[TTS][0m TTS complete: 78KB, 1251ms
+[36m06:05:47.660[0m [1m[Playback][0m Device BEFORE play: X8 Pro
+[36m06:05:47.660[0m [1m[Playback][0m Playing audio: razor-tts-0cde1d8f.mp3 (pace=calm, rate=0.9)
+[36m06:05:53.003[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:05:53.003[0m [1m[Playback][0m Playback finished
+[36m06:05:53.003[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [tts_finished]
+]0;Razor [LISTENING][36m06:05:53.003[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:05:54.293[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:05:54.293[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:05:54.293[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:05:54.826[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:05:54.826[0m [1m[Pipeline][0m Replaying 3 buffered audio chunks into STT
+  🎤 Current pipeline.                    [36m06:05:55.914[0m [1m[VAD][0m Speech ended: 1.9s, 64KB
+[36m06:05:56.023[0m [1m[STT][0m Final: "Current pipeline." (confidence: 95%)
+[36m06:05:56.023[0m [1m[Pipeline][0m Command captured: "Current pipeline."
+[36m06:05:56.023[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:05:56.023[0m [1m[Main][0m   📝 "Current pipeline."
+[36m06:05:56.023[0m [1m[Main][0m   Source: streaming-stt
+[36m06:05:56.023[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[33m06:05:58.230[0m [1m[BrainConnector][0m Slow brain response: 2207ms
+[36m06:05:58.230[0m [1m[Main][0m Brain response (2204.2810916900635ms): "."
+[36m06:05:58.230[0m [1m[Main][0m Brain actions: [{"action":"get_pipeline","params":{}}]
+[36m06:05:58.230[0m [1m[Main][0m Fetching data for 1 action(s)...
+[36m06:05:58.230[0m [1m[Main][0m Dispatching action: get_pipeline
+[36m06:06:00.678[0m [1m[Context][0m Turn added. Action: get_pipeline, Entities: 
+[36m06:06:00.678[0m [1m[Main][0m Data response: "76k in pipeline across nine deals."
+[36m06:06:00.678[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:06:00.678[0m [1m[TTS][0m Synthesizing (telnyx, pace=calm): "76k in pipeline across nine deals"
+[36m06:06:01.142[0m [1m[TTS][0m TTS complete: 56KB, 464ms
+[36m06:06:01.308[0m [1m[Playback][0m Device BEFORE play: X8 Pro
+[36m06:06:01.308[0m [1m[Playback][0m Playing audio: razor-tts-49f6dc4e.mp3 (pace=calm, rate=0.9)
+[36m06:06:05.374[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:06:05.374[0m [1m[Playback][0m Playback finished
+[36m06:06:05.374[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [tts_finished]
+]0;Razor [LISTENING][36m06:06:05.374[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:06:07.593[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:06:07.593[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:06:07.593[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:06:08.020[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:06:08.020[0m [1m[Pipeline][0m Replaying 2 buffered audio chunks into STT
+  🎤 Current pipeline.                    [36m06:06:09.316[0m [1m[STT][0m Final: "Alright. Pipeline." (confidence: 94%)
+[36m06:06:09.316[0m [1m[Pipeline][0m Command captured: "Alright. Pipeline."
+[36m06:06:09.317[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:06:09.317[0m [1m[Main][0m   📝 "Alright. Pipeline."
+[36m06:06:09.317[0m [1m[Main][0m   Source: streaming-stt
+[36m06:06:09.317[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:06:09.474[0m [1m[VAD][0m Speech ended: 2.1s, 72KB
+[33m06:06:11.018[0m [1m[BrainConnector][0m Slow brain response: 1701ms
+[36m06:06:11.018[0m [1m[Main][0m Brain response (1698.446273803711ms): "."
+[36m06:06:11.018[0m [1m[Main][0m Brain actions: [{"action":"get_pipeline","params":{}}]
+[36m06:06:11.018[0m [1m[Main][0m Fetching data for 1 action(s)...
+[36m06:06:11.018[0m [1m[Main][0m Dispatching action: get_pipeline
+[36m06:06:13.468[0m [1m[Context][0m Turn added. Action: get_pipeline, Entities: 
+[36m06:06:13.468[0m [1m[Main][0m Data response: "76k in pipeline across nine deals."
+[36m06:06:13.468[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:06:13.468[0m [1m[TTS][0m Synthesizing (telnyx, pace=calm): "76k in pipeline across nine deals"
+[36m06:06:14.199[0m [1m[TTS][0m TTS complete: 56KB, 731ms
+[33m06:06:14.364[0m [1m[Playback][0m Device mismatch: "Mac mini Speakers" — retrying switch to "X8 Pro"
+[36m06:06:14.481[0m [1m[Playback][0m Device BEFORE play: Mac mini Speakers
+[36m06:06:14.481[0m [1m[Playback][0m Playing audio: razor-tts-3491dfe3.mp3 (pace=calm, rate=0.9)
+[36m06:06:18.795[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:06:18.795[0m [1m[Playback][0m Playback finished
+[36m06:06:18.795[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [tts_finished]
+]0;Razor [LISTENING][36m06:06:18.795[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:06:19.975[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:06:26.033[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:06:26.033[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:06:26.033[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:06:26.485[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:06:26.485[0m [1m[Pipeline][0m Replaying 2 buffered audio chunks into STT
+  🎤 Closing this week.                    [36m06:06:27.655[0m [1m[VAD][0m Speech ended: 1.9s, 64KB
+  🎤 This week.                      🎤 This week.                      🎤 This week.                    [36m06:06:31.077[0m [1m[STT][0m Final: "This week." (confidence: 92%)
+[36m06:06:31.077[0m [1m[Pipeline][0m Command captured: "This week."
+[36m06:06:31.077[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:06:31.077[0m [1m[Main][0m   📝 "This week."
+[36m06:06:31.077[0m [1m[Main][0m   Source: streaming-stt
+[36m06:06:31.077[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:06:31.755[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[33m06:06:33.167[0m [1m[BrainConnector][0m Slow brain response: 2090ms
+[36m06:06:33.167[0m [1m[Main][0m Brain response (2087.05472946167ms): "."
+[36m06:06:33.167[0m [1m[Main][0m Brain actions: [{"action":"get_deals_closing","params":{"period":"this_week"}}]
+[36m06:06:33.167[0m [1m[Main][0m Fetching data for 1 action(s)...
+[36m06:06:33.167[0m [1m[Main][0m Dispatching action: get_deals_closing
+[36m06:06:33.794[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:06:34.414[0m [1m[Context][0m Turn added. Action: get_deals_closing, Entities: 
+[36m06:06:34.414[0m [1m[Main][0m Data response: "Nothing closing this week."
+[36m06:06:34.415[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:06:34.415[0m [1m[TTS][0m Synthesizing (telnyx, pace=calm): "Nothing closing this week. Anything specific you wanna know about these deals?"
+[36m06:06:35.528[0m [1m[TTS][0m TTS complete: 80KB, 1113ms
+[36m06:06:35.725[0m [1m[Playback][0m Device BEFORE play: X8 Pro
+[36m06:06:35.725[0m [1m[Playback][0m Playing audio: razor-tts-a3722545.mp3 (pace=calm, rate=0.9)
+[36m06:06:40.616[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:06:40.616[0m [1m[Playback][0m Playback finished
+[36m06:06:40.616[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [tts_finished]
+]0;Razor [LISTENING][36m06:06:40.616[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:06:42.413[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:06:42.413[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:06:42.414[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:06:43.118[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:06:43.118[0m [1m[Pipeline][0m Replaying 3 buffered audio chunks into STT
+  🎤 Closing this month                    [36m06:06:44.035[0m [1m[VAD][0m Speech ended: 1.9s, 64KB
+  🎤 Closing this month.                      🎤 Closing this month.                      🎤 Closing this month.                      🎤 Closing this month.                    [36m06:06:47.495[0m [1m[STT][0m Final: "Closing this month." (confidence: 96%)
+[36m06:06:47.495[0m [1m[Pipeline][0m Command captured: "Closing this month."
+[36m06:06:47.495[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:06:47.495[0m [1m[Main][0m   📝 "Closing this month."
+[36m06:06:47.495[0m [1m[Main][0m   Source: streaming-stt
+[36m06:06:47.495[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[33m06:06:49.849[0m [1m[BrainConnector][0m Slow brain response: 2353ms
+[36m06:06:49.849[0m [1m[Main][0m Brain response (2351.1829376220703ms): "."
+[36m06:06:49.849[0m [1m[Main][0m Brain actions: [{"action":"get_deals_closing","params":{"period":"this_month"}}]
+[36m06:06:49.850[0m [1m[Main][0m Fetching data for 1 action(s)...
+[36m06:06:49.850[0m [1m[Main][0m Dispatching action: get_deals_closing
+[36m06:06:51.089[0m [1m[Context][0m Turn added. Action: get_deals_closing, Entities: 
+[36m06:06:51.089[0m [1m[Main][0m Data response: "2 on deck for this month, Q4, goldlevelmarketing.com"
+[36m06:06:51.089[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:06:51.089[0m [1m[TTS][0m Truncated TTS text to 100 chars for speed
+[36m06:06:51.089[0m [1m[TTS][0m Synthesizing (telnyx, pace=calm): "2 on deck for this month, Q4, goldlevelmarketing.com Want me to highlight which ..."
+[36m06:06:52.030[0m [1m[TTS][0m TTS complete: 124KB, 941ms
+[36m06:06:52.230[0m [1m[Playback][0m Device BEFORE play: X8 Pro
+[36m06:06:52.230[0m [1m[Playback][0m Playing audio: razor-tts-13f568c2.mp3 (pace=calm, rate=0.9)
+[36m06:06:59.909[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:06:59.909[0m [1m[Playback][0m Playback finished
+[36m06:06:59.909[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [tts_finished]
+]0;Razor [LISTENING][36m06:06:59.909[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:07:13.894[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:07:13.894[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:07:13.894[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:07:14.743[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:07:14.743[0m [1m[Pipeline][0m Replaying 4 buffered audio chunks into STT
+  🎤 Stay on the deal.                    [36m06:07:15.773[0m [1m[VAD][0m Speech ended: 2.1s, 72KB
+  🎤 Stale deals.                      🎤 Stale deals?                      🎤 Stale deals?                    [36m06:07:19.003[0m [1m[STT][0m Final: "Stale deals?" (confidence: 85%)
+[36m06:07:19.003[0m [1m[Pipeline][0m Command captured: "Stale deals?"
+[36m06:07:19.003[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:07:19.003[0m [1m[Main][0m   📝 "Stale deals?"
+[36m06:07:19.003[0m [1m[Main][0m   Source: streaming-stt
+[36m06:07:19.003[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:07:19.003[0m [1m[Main][0m Mood: curious (confidence: 0.5)
+[33m06:07:20.964[0m [1m[BrainConnector][0m Slow brain response: 1961ms
+[36m06:07:20.964[0m [1m[Main][0m Brain response (1959.3501091003418ms): "."
+[36m06:07:20.964[0m [1m[Main][0m Brain actions: [{"action":"get_stale_deals","params":{}}]
+[36m06:07:20.964[0m [1m[Main][0m Fetching data for 1 action(s)...
+[36m06:07:20.964[0m [1m[Main][0m Dispatching action: get_stale_deals
+[36m06:07:22.205[0m [1m[Context][0m Turn added. Action: get_stale_deals, Entities: 
+[36m06:07:22.205[0m [1m[Main][0m Data response: "1 going cold, UnifyGTM needs attention"
+[36m06:07:22.205[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:07:22.205[0m [1m[TTS][0m Synthesizing (telnyx, pace=normal): "1 going cold, UnifyGTM needs attention"
+[36m06:07:22.915[0m [1m[TTS][0m TTS complete: 59KB, 710ms
+[36m06:07:23.108[0m [1m[Playback][0m Device BEFORE play: X8 Pro
+[36m06:07:23.108[0m [1m[Playback][0m Playing audio: razor-tts-6f3f3d34.mp3 (pace=normal, rate=1)
+[36m06:07:27.470[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:07:27.470[0m [1m[Playback][0m Playback finished
+[36m06:07:27.470[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [tts_finished]
+]0;Razor [LISTENING][36m06:07:27.470[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:07:28.234[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:07:28.234[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:07:28.234[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:07:28.876[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:07:28.876[0m [1m[Pipeline][0m Replaying 3 buffered audio chunks into STT
+  🎤 Much pipeline?                    [36m06:07:29.856[0m [1m[VAD][0m Speech ended: 1.9s, 64KB
+  🎤 Much pipeline?                      🎤 Much pipeline?                      🎤 Much pipeline?                    [36m06:07:33.390[0m [1m[STT][0m Final: "Much pipeline?" (confidence: 100%)
+[36m06:07:33.390[0m [1m[Pipeline][0m Command captured: "Much pipeline?"
+[36m06:07:33.390[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:07:33.390[0m [1m[Main][0m   📝 "Much pipeline?"
+[36m06:07:33.391[0m [1m[Main][0m   Source: streaming-stt
+[36m06:07:33.391[0m [1m[Main][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m06:07:33.391[0m [1m[Main][0m Mood: curious (confidence: 0.5)
+[33m06:07:35.591[0m [1m[BrainConnector][0m Slow brain response: 2200ms
+[36m06:07:35.591[0m [1m[Main][0m Brain response (2199.0621089935303ms): "."
+[36m06:07:35.591[0m [1m[Main][0m Brain actions: [{"action":"get_pipeline","params":{}}]
+[36m06:07:35.591[0m [1m[Main][0m Fetching data for 1 action(s)...
+[36m06:07:35.591[0m [1m[Main][0m Dispatching action: get_pipeline
+[36m06:07:39.027[0m [1m[Context][0m Turn added. Action: get_pipeline, Entities: 
+[36m06:07:39.027[0m [1m[Main][0m Data response: "76k in pipeline across nine deals."
+[36m06:07:39.027[0m [1m[Pipeline][0m State: PROCESSING → SPEAKING [tts_start]
+]0;Razor [SPEAKING][36m06:07:39.027[0m [1m[TTS][0m Synthesizing (telnyx, pace=normal): "Good question. 76k in pipeline across nine deals. Want me to break down where th..."
+[36m06:07:40.055[0m [1m[TTS][0m TTS complete: 111KB, 1028ms
+[36m06:07:40.231[0m [1m[Playback][0m Device BEFORE play: X8 Pro
+[36m06:07:40.231[0m [1m[Playback][0m Playing audio: razor-tts-18d66043.mp3 (pace=normal, rate=1)
+[36m06:07:46.895[0m [1m[Playback][0m Device AFTER play: X8 Pro
+[36m06:07:46.895[0m [1m[Playback][0m Playback finished
+[36m06:07:46.895[0m [1m[Pipeline][0m State: SPEAKING → LISTENING [tts_finished]
+]0;Razor [LISTENING][36m06:07:46.895[0m [1m[FollowUp][0m Mode active (via attention system)
+[36m06:07:58.015[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[36m06:07:59.714[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[33m06:07:59.801[0m [1m[BT][0m BT switch failed (got "Mac mini Speakers"), retrying...
+[36m06:08:09.716[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:08:17.995[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:08:19.014[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:08:19.725[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:08:28.498[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[31m06:08:29.497[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:08:29.727[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:08:31.555[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:08:39.726[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:08:42.058[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[31m06:08:42.059[0m [1m[SalesloftPoller][0m Poll failed: fetch failed
+[36m06:08:42.575[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:08:46.899[0m [1m[Main][0m Conversation idle timeout — triggering learning cycle
+[33m06:08:46.998[0m [1m[BT][0m Output is "Mac mini Speakers", expected "X8 Pro" — switching
+[36m06:08:47.031[0m [1m[BT][0m Audio output set to "X8 Pro"
+[36m06:08:49.708[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:08:53.079[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:08:54.336[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[36m06:08:57.415[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:08:59.725[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:09:01.256[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[31m06:09:04.840[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:09:07.655[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[31m06:09:07.840[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:09:08.676[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:09:09.615[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:09:09.615[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:09:09.615[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:09:09.725[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:09:10.735[0m [1m[VAD][0m Speech ended: 1.4s, 48KB
+[31m06:09:11.338[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[33m06:09:12.070[0m [1m[Google][0m gmail.search transient error, retry 1/3 in 500ms
+[36m06:09:12.255[0m [1m[VAD][0m Speech ended: 1.1s, 40KB
+[31m06:09:14.618[0m [1m[STT][0m Deepgram WebSocket error: WebSocket was closed before the connection was established
+[33m06:09:14.618[0m [1m[STT][0m Deepgram WebSocket closed: 1006 
+[31m06:09:14.618[0m [1m[Pipeline][0m Failed to connect streaming STT: Deepgram WebSocket connection timeout
+[36m06:09:14.618[0m [1m[Pipeline][0m State: PROCESSING → LISTENING [stt_connect_failed]
+]0;Razor [LISTENING][36m06:09:17.555[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:09:17.555[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:09:17.555[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][31m06:09:17.839[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:09:18.414[0m [1m[VAD][0m Speech ended: 1.1s, 40KB
+[31m06:09:18.838[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:09:19.734[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:09:20.456[0m [1m[VAD][0m Speech ended: 1.1s, 40KB
+[31m06:09:22.558[0m [1m[STT][0m Deepgram WebSocket error: WebSocket was closed before the connection was established
+[33m06:09:22.558[0m [1m[STT][0m Deepgram WebSocket closed: 1006 
+[31m06:09:22.558[0m [1m[Pipeline][0m Failed to connect streaming STT: Deepgram WebSocket connection timeout
+[36m06:09:22.558[0m [1m[Pipeline][0m State: PROCESSING → LISTENING [stt_connect_failed]
+]0;Razor [LISTENING][36m06:09:23.175[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:09:23.175[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:09:23.175[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:09:24.036[0m [1m[VAD][0m Speech ended: 1.1s, 40KB
+[36m06:09:26.596[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[31m06:09:28.177[0m [1m[STT][0m Deepgram WebSocket error: WebSocket was closed before the connection was established
+[33m06:09:28.178[0m [1m[STT][0m Deepgram WebSocket closed: 1006 
+[31m06:09:28.178[0m [1m[Pipeline][0m Failed to connect streaming STT: Deepgram WebSocket connection timeout
+[36m06:09:28.178[0m [1m[Pipeline][0m State: PROCESSING → LISTENING [stt_connect_failed]
+]0;Razor [LISTENING][36m06:09:28.895[0m [1m[VAD][0m Speech ended: 1.4s, 48KB
+[36m06:09:29.730[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:09:31.716[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:09:36.335[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[31m06:09:39.401[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:09:39.745[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:09:41.900[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[31m06:09:42.400[0m [1m[SalesloftPoller][0m Poll failed: fetch failed
+[33m06:09:42.581[0m [1m[Google][0m gmail.search transient error, retry 2/3 in 1000ms
+[36m06:09:43.236[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:09:45.536[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[31m06:09:46.401[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[33m06:09:47.013[0m [1m[BT][0m Output is "Mac mini Speakers", expected "X8 Pro" — switching
+[36m06:09:47.051[0m [1m[BT][0m Audio output set to "X8 Pro"
+[36m06:09:49.635[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:09:51.436[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[31m06:09:53.403[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[31m06:09:55.905[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:09:59.750[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:09:59.903[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[31m06:10:01.905[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:10:06.796[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:10:09.748[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[33m06:10:12.408[0m [1m[Google][0m gmail.search transient error, retry 1/3 in 500ms
+[36m06:10:13.196[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[31m06:10:13.591[0m [1m[Google][0m gmail.search failed (attempt 3): Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:10:13.591[0m [1m[Google][0m [Google] getRecentEmails error: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:10:13.591[0m [1m[GmailPoller][0m Poll failed: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[36m06:10:13.875[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:10:13.875[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:10:13.875[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:10:14.736[0m [1m[VAD][0m Speech ended: 1.1s, 40KB
+[31m06:10:17.326[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[31m06:10:18.878[0m [1m[STT][0m Deepgram WebSocket error: WebSocket was closed before the connection was established
+[33m06:10:18.878[0m [1m[STT][0m Deepgram WebSocket closed: 1006 
+[31m06:10:18.878[0m [1m[Pipeline][0m Failed to connect streaming STT: Deepgram WebSocket connection timeout
+[36m06:10:18.878[0m [1m[Pipeline][0m State: PROCESSING → LISTENING [stt_connect_failed]
+]0;Razor [LISTENING][36m06:10:19.756[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:10:23.331[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:10:26.756[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:10:29.743[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:10:34.696[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[31m06:10:37.317[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:10:39.750[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:10:42.326[0m [1m[SalesloftPoller][0m Poll failed: fetch failed
+[33m06:10:42.918[0m [1m[Google][0m gmail.search transient error, retry 2/3 in 1000ms
+[36m06:10:43.656[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[31m06:10:44.825[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[33m06:10:47.020[0m [1m[BT][0m Output is "Mac mini Speakers", expected "X8 Pro" — switching
+[36m06:10:47.056[0m [1m[BT][0m Audio output set to "X8 Pro"
+[36m06:10:48.776[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[31m06:10:53.826[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[31m06:10:58.825[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:10:59.757[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:11:02.336[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[36m06:11:03.275[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:11:03.275[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:11:03.275[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:11:04.136[0m [1m[VAD][0m Speech ended: 1.1s, 40KB
+[36m06:11:06.695[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:11:07.716[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[31m06:11:08.279[0m [1m[STT][0m Deepgram WebSocket error: WebSocket was closed before the connection was established
+[33m06:11:08.279[0m [1m[STT][0m Deepgram WebSocket closed: 1006 
+[31m06:11:08.279[0m [1m[Pipeline][0m Failed to connect streaming STT: Deepgram WebSocket connection timeout
+[36m06:11:08.279[0m [1m[Pipeline][0m State: PROCESSING → LISTENING [stt_connect_failed]
+]0;Razor [LISTENING][36m06:11:09.755[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:11:11.056[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[33m06:11:12.337[0m [1m[Google][0m gmail.search transient error, retry 1/3 in 500ms
+[31m06:11:12.842[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[31m06:11:13.930[0m [1m[Google][0m gmail.search failed (attempt 3): Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:11:13.930[0m [1m[Google][0m [Google] getRecentEmails error: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:11:13.930[0m [1m[GmailPoller][0m Poll failed: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[36m06:11:19.756[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:11:21.339[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:11:22.576[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:11:29.740[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:11:33.080[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:11:34.596[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:11:39.759[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:11:42.017[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[31m06:11:42.080[0m [1m[SalesloftPoller][0m Poll failed: fetch failed
+[33m06:11:42.848[0m [1m[Google][0m gmail.search transient error, retry 2/3 in 1000ms
+[31m06:11:45.080[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[33m06:11:47.016[0m [1m[BT][0m Output is "Mac mini Speakers", expected "X8 Pro" — switching
+[36m06:11:47.051[0m [1m[BT][0m Audio output set to "X8 Pro"
+[36m06:11:50.976[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[31m06:11:52.079[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:11:54.817[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[36m06:11:57.137[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:11:59.746[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:12:01.079[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[31m06:12:05.080[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[31m06:12:07.580[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:12:08.657[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:12:09.760[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:12:09.936[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:12:11.977[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[33m06:12:12.087[0m [1m[Google][0m gmail.search transient error, retry 1/3 in 500ms
+[31m06:12:13.857[0m [1m[Google][0m gmail.search failed (attempt 3): Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:12:13.857[0m [1m[Google][0m [Google] getRecentEmails error: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:12:13.857[0m [1m[GmailPoller][0m Poll failed: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:12:19.158[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:12:19.657[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:12:19.748[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:12:20.161[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[31m06:12:22.160[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[31m06:12:29.661[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:12:29.768[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:12:29.897[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:12:36.297[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:12:39.769[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:12:40.397[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[31m06:12:42.396[0m [1m[SalesloftPoller][0m Poll failed: fetch failed
+[33m06:12:42.602[0m [1m[Google][0m gmail.search transient error, retry 2/3 in 1000ms
+[36m06:12:43.457[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[31m06:12:46.396[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[33m06:12:47.019[0m [1m[BT][0m Output is "Mac mini Speakers", expected "X8 Pro" — switching
+[36m06:12:47.057[0m [1m[BT][0m Audio output set to "X8 Pro"
+[36m06:12:49.769[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:12:53.356[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:12:53.356[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:12:53.356[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][31m06:12:53.896[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:12:54.217[0m [1m[VAD][0m Speech ended: 1.1s, 40KB
+[31m06:12:58.359[0m [1m[STT][0m Deepgram WebSocket error: WebSocket was closed before the connection was established
+[33m06:12:58.359[0m [1m[STT][0m Deepgram WebSocket closed: 1006 
+[31m06:12:58.359[0m [1m[Pipeline][0m Failed to connect streaming STT: Deepgram WebSocket connection timeout
+[36m06:12:58.359[0m [1m[Pipeline][0m State: PROCESSING → LISTENING [stt_connect_failed]
+]0;Razor [LISTENING][36m06:12:59.773[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:13:03.336[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:13:03.336[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:13:03.336[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:13:04.457[0m [1m[VAD][0m Speech ended: 1.4s, 48KB
+[36m06:13:06.257[0m [1m[VAD][0m Speech ended: 1.4s, 48KB
+[31m06:13:08.339[0m [1m[STT][0m Deepgram WebSocket error: WebSocket was closed before the connection was established
+[33m06:13:08.339[0m [1m[STT][0m Deepgram WebSocket closed: 1006 
+[31m06:13:08.339[0m [1m[Pipeline][0m Failed to connect streaming STT: Deepgram WebSocket connection timeout
+[36m06:13:08.339[0m [1m[Pipeline][0m State: PROCESSING → LISTENING [stt_connect_failed]
+]0;Razor [LISTENING][36m06:13:09.764[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[33m06:13:12.404[0m [1m[Google][0m gmail.search transient error, retry 1/3 in 500ms
+[36m06:13:13.576[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:13:13.576[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:13:13.577[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][31m06:13:13.612[0m [1m[Google][0m gmail.search failed (attempt 3): Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:13:13.612[0m [1m[Google][0m [Google] getRecentEmails error: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:13:13.612[0m [1m[GmailPoller][0m Poll failed: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[36m06:13:14.437[0m [1m[VAD][0m Speech ended: 1.1s, 40KB
+[31m06:13:18.579[0m [1m[STT][0m Deepgram WebSocket error: WebSocket was closed before the connection was established
+[33m06:13:18.579[0m [1m[STT][0m Deepgram WebSocket closed: 1006 
+[31m06:13:18.579[0m [1m[Pipeline][0m Failed to connect streaming STT: Deepgram WebSocket connection timeout
+[36m06:13:18.579[0m [1m[Pipeline][0m State: PROCESSING → LISTENING [stt_connect_failed]
+]0;Razor [LISTENING][36m06:13:19.764[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:13:29.771[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:13:39.778[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:13:41.577[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[31m06:13:42.449[0m [1m[SalesloftPoller][0m Poll failed: fetch failed
+[33m06:13:42.912[0m [1m[Google][0m gmail.search transient error, retry 2/3 in 1000ms
+[33m06:13:47.022[0m [1m[BT][0m Output is "Mac mini Speakers", expected "X8 Pro" — switching
+[36m06:13:47.061[0m [1m[BT][0m Audio output set to "X8 Pro"
+[36m06:13:48.916[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:13:48.916[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:13:48.917[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:13:49.753[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:13:50.017[0m [1m[VAD][0m Speech ended: 1.4s, 48KB
+[31m06:13:51.950[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[31m06:13:53.919[0m [1m[STT][0m Deepgram WebSocket error: WebSocket was closed before the connection was established
+[33m06:13:53.919[0m [1m[STT][0m Deepgram WebSocket closed: 1006 
+[31m06:13:53.919[0m [1m[Pipeline][0m Failed to connect streaming STT: Deepgram WebSocket connection timeout
+[36m06:13:53.919[0m [1m[Pipeline][0m State: PROCESSING → LISTENING [stt_connect_failed]
+]0;Razor [LISTENING][36m06:13:57.458[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:13:59.237[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:13:59.770[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:14:07.938[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[31m06:14:07.961[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[31m06:14:09.460[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:14:09.778[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:14:12.298[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[33m06:14:12.457[0m [1m[Google][0m gmail.search transient error, retry 1/3 in 500ms
+[31m06:14:13.923[0m [1m[Google][0m gmail.search failed (attempt 3): Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:14:13.923[0m [1m[Google][0m [Google] getRecentEmails error: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:14:13.923[0m [1m[GmailPoller][0m Poll failed: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:14:17.963[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:14:19.779[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:14:22.463[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:14:27.137[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[36m06:14:29.780[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:14:36.098[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[31m06:14:37.640[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:14:38.918[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:14:39.779[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:14:41.216[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[31m06:14:42.141[0m [1m[SalesloftPoller][0m Poll failed: fetch failed
+[33m06:14:42.967[0m [1m[Google][0m gmail.search transient error, retry 2/3 in 1000ms
+[31m06:14:46.142[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[33m06:14:47.025[0m [1m[BT][0m Output is "Mac mini Speakers", expected "X8 Pro" — switching
+[36m06:14:47.063[0m [1m[BT][0m Audio output set to "X8 Pro"
+[36m06:14:48.137[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[31m06:14:49.140[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:14:49.781[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:14:51.640[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:14:52.236[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:14:57.098[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[31m06:14:58.142[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:14:59.783[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:15:01.617[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:15:01.618[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:15:01.618[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:15:02.477[0m [1m[VAD][0m Speech ended: 1.1s, 40KB
+[31m06:15:02.643[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[31m06:15:06.621[0m [1m[STT][0m Deepgram WebSocket error: WebSocket was closed before the connection was established
+[33m06:15:06.621[0m [1m[STT][0m Deepgram WebSocket closed: 1006 
+[31m06:15:06.622[0m [1m[Pipeline][0m Failed to connect streaming STT: Deepgram WebSocket connection timeout
+[36m06:15:06.622[0m [1m[Pipeline][0m State: PROCESSING → LISTENING [stt_connect_failed]
+]0;Razor [LISTENING][31m06:15:07.146[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:15:07.338[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:15:09.785[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[33m06:15:12.150[0m [1m[Google][0m gmail.search transient error, retry 1/3 in 500ms
+[31m06:15:13.974[0m [1m[Google][0m gmail.search failed (attempt 3): Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:15:13.975[0m [1m[Google][0m [Google] getRecentEmails error: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:15:13.975[0m [1m[GmailPoller][0m Poll failed: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:15:17.857[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:15:19.784[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:15:25.417[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:15:25.417[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:15:25.417[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:15:26.278[0m [1m[VAD][0m Speech ended: 1.1s, 40KB
+[36m06:15:29.784[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:15:30.420[0m [1m[STT][0m Deepgram WebSocket error: WebSocket was closed before the connection was established
+[33m06:15:30.421[0m [1m[STT][0m Deepgram WebSocket closed: 1006 
+[31m06:15:30.421[0m [1m[Pipeline][0m Failed to connect streaming STT: Deepgram WebSocket connection timeout
+[36m06:15:30.421[0m [1m[Pipeline][0m State: PROCESSING → LISTENING [stt_connect_failed]
+]0;Razor [LISTENING][36m06:15:31.657[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:15:39.791[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:15:42.159[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[31m06:15:42.159[0m [1m[SalesloftPoller][0m Poll failed: fetch failed
+[33m06:15:42.660[0m [1m[Google][0m gmail.search transient error, retry 2/3 in 1000ms
+[33m06:15:47.021[0m [1m[BT][0m Output is "Mac mini Speakers", expected "X8 Pro" — switching
+[36m06:15:47.058[0m [1m[BT][0m Audio output set to "X8 Pro"
+[36m06:15:59.793[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:16:09.789[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[33m06:16:12.166[0m [1m[Google][0m gmail.search transient error, retry 1/3 in 500ms
+[31m06:16:13.673[0m [1m[Google][0m gmail.search failed (attempt 3): Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:16:13.673[0m [1m[Google][0m [Google] getRecentEmails error: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:16:13.673[0m [1m[GmailPoller][0m Poll failed: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[36m06:16:18.758[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:16:19.787[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:16:29.361[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:16:29.790[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:16:39.774[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:16:42.454[0m [1m[SalesloftPoller][0m Poll failed: fetch failed
+[33m06:16:42.677[0m [1m[Google][0m gmail.search transient error, retry 2/3 in 1000ms
+[33m06:16:47.031[0m [1m[BT][0m Output is "Mac mini Speakers", expected "X8 Pro" — switching
+[36m06:16:47.068[0m [1m[BT][0m Audio output set to "X8 Pro"
+[36m06:16:48.719[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[31m06:16:59.301[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:16:59.795[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:17:09.796[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[33m06:17:12.462[0m [1m[Google][0m gmail.search transient error, retry 1/3 in 500ms
+[31m06:17:13.687[0m [1m[Google][0m gmail.search failed (attempt 3): Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:17:13.687[0m [1m[Google][0m [Google] getRecentEmails error: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:17:13.687[0m [1m[GmailPoller][0m Poll failed: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[36m06:17:19.793[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:17:29.781[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:17:39.795[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:17:42.454[0m [1m[SalesloftPoller][0m Poll failed: fetch failed
+[33m06:17:42.970[0m [1m[Google][0m gmail.search transient error, retry 2/3 in 1000ms
+[33m06:17:47.018[0m [1m[BT][0m Output is "Mac mini Speakers", expected "X8 Pro" — switching
+[36m06:17:47.052[0m [1m[BT][0m Audio output set to "X8 Pro"
+[36m06:17:52.878[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:17:52.878[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:17:52.878[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:17:53.739[0m [1m[VAD][0m Speech ended: 1.1s, 40KB
+[31m06:17:57.881[0m [1m[STT][0m Deepgram WebSocket error: WebSocket was closed before the connection was established
+[33m06:17:57.881[0m [1m[STT][0m Deepgram WebSocket closed: 1006 
+[31m06:17:57.881[0m [1m[Pipeline][0m Failed to connect streaming STT: Deepgram WebSocket connection timeout
+[36m06:17:57.881[0m [1m[Pipeline][0m State: PROCESSING → LISTENING [stt_connect_failed]
+]0;Razor [LISTENING][36m06:17:59.802[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:18:00.658[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[36m06:18:02.439[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:18:09.810[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:18:11.163[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[33m06:18:12.461[0m [1m[Google][0m gmail.search transient error, retry 1/3 in 500ms
+[31m06:18:12.664[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[31m06:18:13.980[0m [1m[Google][0m gmail.search failed (attempt 3): Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:18:13.980[0m [1m[Google][0m [Google] getRecentEmails error: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:18:13.981[0m [1m[GmailPoller][0m Poll failed: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[36m06:18:19.807[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:18:29.803[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:18:39.806[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:18:42.454[0m [1m[SalesloftPoller][0m Poll failed: fetch failed
+[33m06:18:42.971[0m [1m[Google][0m gmail.search transient error, retry 2/3 in 1000ms
+[33m06:18:47.008[0m [1m[BT][0m Output is "Mac mini Speakers", expected "X8 Pro" — switching
+[36m06:18:47.042[0m [1m[BT][0m Audio output set to "X8 Pro"
+[36m06:18:59.806[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:19:09.809[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[33m06:19:12.462[0m [1m[Google][0m gmail.search transient error, retry 1/3 in 500ms
+[31m06:19:13.981[0m [1m[Google][0m gmail.search failed (attempt 3): Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:19:13.981[0m [1m[Google][0m [Google] getRecentEmails error: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:19:13.981[0m [1m[GmailPoller][0m Poll failed: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[36m06:19:19.791[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:19:29.815[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:19:38.179[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[36m06:19:39.813[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:19:42.456[0m [1m[SalesloftPoller][0m Poll failed: fetch failed
+[33m06:19:42.972[0m [1m[Google][0m gmail.search transient error, retry 2/3 in 1000ms
+[33m06:19:47.032[0m [1m[BT][0m Output is "Mac mini Speakers", expected "X8 Pro" — switching
+[36m06:19:47.069[0m [1m[BT][0m Audio output set to "X8 Pro"
+[36m06:19:48.420[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[31m06:19:48.457[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:19:49.619[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:19:49.619[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:19:49.619[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:19:49.795[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:19:50.480[0m [1m[VAD][0m Speech ended: 1.1s, 40KB
+[31m06:19:54.622[0m [1m[STT][0m Deepgram WebSocket error: WebSocket was closed before the connection was established
+[33m06:19:54.622[0m [1m[STT][0m Deepgram WebSocket closed: 1006 
+[31m06:19:54.622[0m [1m[Pipeline][0m Failed to connect streaming STT: Deepgram WebSocket connection timeout
+[36m06:19:54.623[0m [1m[Pipeline][0m State: PROCESSING → LISTENING [stt_connect_failed]
+]0;Razor [LISTENING][31m06:19:58.458[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:19:59.803[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:20:07.620[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[36m06:20:09.792[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[33m06:20:12.465[0m [1m[Google][0m gmail.search transient error, retry 1/3 in 500ms
+[31m06:20:13.982[0m [1m[Google][0m gmail.search failed (attempt 3): Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:20:13.983[0m [1m[Google][0m [Google] getRecentEmails error: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[31m06:20:13.983[0m [1m[GmailPoller][0m Poll failed: gmail.search: Command failed: gog gmail search --account alrazi@telnyx.com --json --no-input --max 10 to:alrazi@telnyx.com category:primary newer_than:2m
+
+[36m06:20:14.959[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:20:14.959[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:20:14.959[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:20:15.819[0m [1m[VAD][0m Speech ended: 1.1s, 40KB
+[31m06:20:18.123[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[36m06:20:19.819[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[31m06:20:19.962[0m [1m[STT][0m Deepgram WebSocket error: WebSocket was closed before the connection was established
+[33m06:20:19.962[0m [1m[STT][0m Deepgram WebSocket closed: 1006 
+[31m06:20:19.962[0m [1m[Pipeline][0m Failed to connect streaming STT: Deepgram WebSocket connection timeout
+[36m06:20:19.962[0m [1m[Pipeline][0m State: PROCESSING → LISTENING [stt_connect_failed]
+]0;Razor [LISTENING][36m06:20:24.439[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:20:24.439[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:20:24.439[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:20:25.300[0m [1m[VAD][0m Speech ended: 1.1s, 40KB
+[31m06:20:29.442[0m [1m[STT][0m Deepgram WebSocket error: WebSocket was closed before the connection was established
+[33m06:20:29.443[0m [1m[STT][0m Deepgram WebSocket closed: 1006 
+[31m06:20:29.443[0m [1m[Pipeline][0m Failed to connect streaming STT: Deepgram WebSocket connection timeout
+[36m06:20:29.443[0m [1m[Pipeline][0m State: PROCESSING → LISTENING [stt_connect_failed]
+]0;Razor [LISTENING][36m06:20:29.819[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:20:34.500[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[36m06:20:35.779[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[36m06:20:39.816[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:20:40.660[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[31m06:20:42.455[0m [1m[SalesloftPoller][0m Poll failed: fetch failed
+[33m06:20:42.973[0m [1m[Google][0m gmail.search transient error, retry 2/3 in 1000ms
+[31m06:20:44.956[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[31m06:20:45.958[0m [1m[WakeTranscript][0m Deepgram transcription failed: fetch failed
+[33m06:20:47.034[0m [1m[BT][0m Output is "Mac mini Speakers", expected "X8 Pro" — switching
+[36m06:20:47.071[0m [1m[BT][0m Audio output set to "X8 Pro"
+[36m06:20:49.844[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:20:55.240[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:20:59.815[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:21:08.301[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:21:09.824[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:21:16.919[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:21:16.920[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:21:16.920[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:21:17.556[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:21:17.556[0m [1m[Pipeline][0m Replaying 3 buffered audio chunks into STT
+[36m06:21:18.020[0m [1m[VAD][0m Speech ended: 1.4s, 48KB
+[36m06:21:19.807[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:21:23.919[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[33m06:21:25.557[0m [1m[Pipeline][0m Command timeout — no speech after wake word
+[36m06:21:25.558[0m [1m[Pipeline][0m State: PROCESSING → LISTENING [command_timeout]
+]0;Razor [LISTENING][36m06:21:25.558[0m [1m[Main][0m No command received — returning to idle
+[36m06:21:25.961[0m [1m[VAD][0m Speech ended: 1.1s, 40KB
+[36m06:21:27.240[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:21:28.520[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:21:28.939[0m [1m[Pipeline][0m Attention active — capturing without wake word
+[36m06:21:28.939[0m [1m[FollowUp][0m Consumed — processing follow-up command
+[36m06:21:28.939[0m [1m[Pipeline][0m State: LISTENING → PROCESSING [attention_follow_up]
+]0;Razor [PROCESSING][36m06:21:29.687[0m [1m[STT][0m Deepgram streaming connected ✓
+[36m06:21:29.687[0m [1m[Pipeline][0m Replaying 3 buffered audio chunks into STT
+[36m06:21:29.823[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:21:29.893[0m [1m[VAD][0m Speech ended: 1.2s, 40KB
+[33m06:21:37.688[0m [1m[Pipeline][0m Command timeout — no speech after wake word
+[36m06:21:37.689[0m [1m[Pipeline][0m State: PROCESSING → LISTENING [command_timeout]
+]0;Razor [LISTENING][36m06:21:37.689[0m [1m[Main][0m No command received — returning to idle
+[36m06:21:38.501[0m [1m[VAD][0m Speech ended: 0.8s, 32KB
+[36m06:21:39.822[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:21:44.661[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[33m06:21:47.022[0m [1m[BT][0m Output is "Mac mini Speakers", expected "X8 Pro" — switching
+[36m06:21:47.059[0m [1m[BT][0m Audio output set to "X8 Pro"
+[36m06:21:48.241[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:21:49.820[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:21:50.801[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:21:59.823[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:22:01.801[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:22:07.701[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:22:09.830[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:22:10.261[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:22:19.815[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:22:29.812[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:22:39.815[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[33m06:22:47.014[0m [1m[BT][0m Output is "Mac mini Speakers", expected "X8 Pro" — switching
+[36m06:22:47.048[0m [1m[BT][0m Audio output set to "X8 Pro"
+[36m06:22:59.821[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:23:09.821[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:23:19.809[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:23:29.818[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:23:39.807[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:23:41.141[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[33m06:23:47.027[0m [1m[BT][0m Output is "Mac mini Speakers", expected "X8 Pro" — switching
+[36m06:23:47.063[0m [1m[BT][0m Audio output set to "X8 Pro"
+[36m06:23:48.821[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:23:50.861[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:23:51.881[0m [1m[VAD][0m Speech ended: 0.9s, 32KB
+[36m06:23:59.821[0m [1m[BT][0m Quick switch: "Mac mini Speakers" → "X8 Pro"
+[36m06:24:09.344[0m [1m[Main][0m 
+Shutting down Razor...
+[36m06:24:09.344[0m [1m[Intelligence][0m Monitor stopped (24 polls completed)
+[36m06:24:09.344[0m [1m[Pipeline][0m Stopping voice pipeline...
+[36m06:24:09.345[0m [1m[Capture][0m Mic capture stopped (1417.4s, 40096KB)
+[36m06:24:09.345[0m [1m[BT][0m Bluetooth monitor stopped
+[36m06:24:09.345[0m [1m[Pipeline][0m State: LISTENING → IDLE [pipeline_stop]
+]0;Razor [IDLE][36m06:24:09.345[0m [1m[Main][0m Intelligence alert: Heads up — Daria at Wall Street Prep just replied to your email.
+[36m06:24:09.345[0m [1m[TTS][0m Synthesizing (telnyx, pace=urgent): "Heads up. Daria at Wall Street Prep just replied to your email."
+[36m06:24:09.346[0m [1m[Pipeline][0m Voice pipeline stopped
+[36m06:24:09.347[0m [1m[BrainConnector][0m Disconnected from brain server
+[36m06:24:09.347[0m [1m[Main][0m Razor shutdown complete

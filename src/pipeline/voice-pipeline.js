@@ -33,7 +33,12 @@ import { createWakeWordDetector } from '../wake-word/index.js';
 import DeepgramStream from '../stt/deepgram-stream.js';
 import TtsEngine from '../tts/tts-engine.js';
 import InterruptionHandler from './interruption-handler.js';
+import { attention } from './attention.js';
+import { followUpMode } from './follow-up-mode.js';
+import { conversationContext } from '../context/conversation-context.js';
+import { ackPlayer } from '../audio/ack-player.js';
 import { getStateMachine, States } from '../state/stateMachine.js';
+import { userState } from '../state/user-state.js';
 import config from '../config.js';
 import makeLogger from '../utils/logger.js';
 
@@ -70,6 +75,10 @@ class VoicePipeline extends EventEmitter {
     this.sentenceTimer = null;
     this.commandTimeoutMs = 8000; // safety cap — endpointing handles fast finalization
 
+    // ── Attention: 5-minute awake window after any interaction ──
+    // Managed by attention singleton (src/pipeline/attention.js)
+    // Follow-up mode delegates to attention + adds 500ms grace period
+
     // ── Rolling audio buffer for one-breath commands ──
     // Keeps last 3s of PCM. When wake word fires, we replay this into STT
     // so "Razor what's on my calendar" (said in one breath) is fully captured.
@@ -104,12 +113,24 @@ class VoicePipeline extends EventEmitter {
     this.wakeType = type;
     this.wakeDetector = detector;
 
-    // 3. Generate subtle ack tone for instant playback
-    log.info('→ Generating ack tone...');
-    await this.tts.warmup();
+    // 3. Preload acknowledgment audio (TTS-generated acks in assets/acks/)
+    log.info('→ Preloading ack audio...');
+    await ackPlayer.preload();
 
-    // 4. Wire up events
+    // 4. Fallback: generate macOS say acks if no TTS acks available
+    if (!ackPlayer.ready) {
+      log.info('→ No TTS acks found — generating fallback ack tones...');
+      await this.tts.warmup();
+    }
+
+    // 5. Wire up events
     this.wireEvents();
+
+    // 6. Tighter state machine timeouts for faster recovery
+    //    PROCESSING: 30s watchdog (default 90s) — catches hung brain calls
+    //    ERROR: 5s recovery (default 30s) — faster return to LISTENING
+    this.sm.setTimeoutOverride(States.PROCESSING, 30_000);
+    this.sm.setTimeoutOverride(States.ERROR, 5_000);
 
     log.info('═══════════════════════════════════════════');
     log.info(`  Wake word strategy: ${this.wakeType}`);
@@ -123,7 +144,7 @@ class VoicePipeline extends EventEmitter {
   // ── Wire all event handlers ──
   wireEvents() {
     // ── Audio Capture → VAD + Interruption ──
-    this.capture.on('data', (pcm) => {
+    this.capture.on('data', (pcm) => { 
       // Always send to interruption handler (bypasses mic mute)
       this.interruptHandler.checkChunk(pcm);
 
@@ -148,6 +169,20 @@ class VoicePipeline extends EventEmitter {
     });
 
     // ── VAD Events ──
+    this.vad.on('speech:start', () => {
+      // When attention is awake (past grace period), speech starts command
+      // capture without wake word. isReady() returns false during the first
+      // 500ms after playback to avoid false triggers from speaker bleed.
+      if (followUpMode.isReady() && this.sm.getState().state === States.LISTENING) {
+        log.info('Attention active — capturing without wake word');
+        this._wakeTimestamp = Date.now();
+        followUpMode.consume();
+        attention.activity();
+        this.sm.transition(States.PROCESSING, 'attention_follow_up');
+        this.captureCommand();
+      }
+    });
+
     this.vad.on('speech:end', (segment) => {
       if (this.sm.getState().state === States.LISTENING && this.wakeType === 'transcript') {
         // Transcript fallback: check VAD segment for wake word
@@ -179,6 +214,8 @@ class VoicePipeline extends EventEmitter {
       this.bluetooth.resumePolling();
       this._resumeMic();
       this.sm.transition(States.LISTENING, 'tts_finished');
+      // Enter follow-up mode — user can speak without wake word for 5s
+      followUpMode.enter();
     });
 
     this.playback.on('playback:interrupt', () => {
@@ -200,9 +237,14 @@ class VoicePipeline extends EventEmitter {
       }
     });
 
-    // ── Interruption Handler ──
+    // ── Interruption Handler (Barge-In) ──
+    // When the user speaks during Razor's response:
+    //   1. Stop playback immediately
+    //   2. Transition SPEAKING → INTERRUPTED → LISTENING
+    //   3. Enter follow-up mode so the user's speech is captured
+    //      without needing to say "Razor" again
     this.interruptHandler.on('interrupt', async () => {
-      log.warn('User interruption → INTERRUPTED → killing playback');
+      log.warn('User barge-in → INTERRUPTED → killing playback');
 
       // 1. Enter INTERRUPTED state first
       this.sm.transition(States.INTERRUPTED, 'user_barge_in');
@@ -210,9 +252,13 @@ class VoicePipeline extends EventEmitter {
       // 2. Kill playback
       await this.playback.interrupt();
 
-      // 3. Next tick: transition to LISTENING (synchronous re-entry is blocked)
+      // 3. Next tick: transition to LISTENING + wake attention
+      //    The user was already speaking (that's what triggered the interrupt),
+      //    so they shouldn't need to say "Razor" again.
       process.nextTick(() => {
         this.sm.transition(States.LISTENING, 're_listen');
+        attention.wake('barge_in');
+        followUpMode.enter();
       });
     });
 
@@ -244,6 +290,8 @@ class VoicePipeline extends EventEmitter {
   async stop() {
     log.info('Stopping voice pipeline...');
 
+    attention.destroy();
+    followUpMode.exit();
     if (this.commandTimeout) clearTimeout(this.commandTimeout);
     if (this.sttStream) await this.sttStream.close();
 
@@ -333,9 +381,11 @@ class VoicePipeline extends EventEmitter {
     log.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     this._wakeTimestamp = Date.now();
+    attention.wake('wake_word');
+    followUpMode.exit();
 
-    // Play ack IMMEDIATELY at wake detection — <200ms feedback
-    this.playAck();
+    // Ack disabled — was causing double-voice overlap with TTS
+    // this.playAck('quick');
 
     this.sm.transition(States.PROCESSING, 'wake_word');
 
@@ -381,6 +431,7 @@ class VoicePipeline extends EventEmitter {
       done = true;
       const commandText = getFullCommand();
       log.info(`Command captured: "${commandText}"`);
+      attention.activity();
       this.cleanupCommandCapture();
       this.emit('command', { text: commandText, source });
     };
@@ -489,11 +540,14 @@ class VoicePipeline extends EventEmitter {
     }
   }
 
-  // ── Play a short acknowledgment tone (does NOT mute mic) ──
+  // ── Play a short acknowledgment (does NOT mute mic) ──
   // Mic stays live so the audio ring buffer captures one-breath commands.
-  // The ack is 100ms at 15% volume — too quiet to affect STT transcription.
-  playAck() {
-    const ackFile = this.tts.getRandomAckFile();
+  // Uses AckPlayer (TTS-generated) with fallback to old warmup acks.
+  playAck(context = 'quick') {
+    // Prefer AckPlayer TTS-generated files, fall back to warmup acks
+    const ackFile = ackPlayer.ready
+      ? ackPlayer.getContextualFile(context)
+      : this.tts.getRandomAckFile();
     if (!ackFile) return;
 
     if (this._ackProcess) {
@@ -523,8 +577,24 @@ class VoicePipeline extends EventEmitter {
   }
 
   // ── Speak text (called by external command handler) ──
-  async speak(text, { pace = 'normal' } = {}) {
+  // Respects user availability state: if user is IN_CALL or DND and Razor
+  // is initiating proactively, the speech is queued instead of spoken.
+  // Direct responses to user commands always go through (user asked for it).
+  async speak(text, { pace = 'normal', proactive = false } = {}) {
     if (!text) return;
+
+    // If this is proactive speech (not a direct response), check user state
+    if (proactive && !userState.canSpeak) {
+      log.info(`Suppressed proactive speech (user state: ${userState.state}): "${text.slice(0, 50)}..."`);
+      userState.submitAlert({
+        priority: 'normal',
+        message: text,
+        source: 'proactive_speech',
+      });
+      return;
+    }
+
+    followUpMode.exit();
 
     // Kill any playing ack before starting real TTS
     if (this._ackProcess) {
@@ -554,6 +624,13 @@ class VoicePipeline extends EventEmitter {
   }
 
   // ── State accessor (delegates to state machine) ──
+  // Called when TTS is skipped (empty response) - transitions pipeline back to listening
+  returnToListening(trigger = 'skip_response') {
+    if (this.sm.getState().state !== States.LISTENING) {
+      this.sm.transition(States.LISTENING, trigger);
+    }
+  }
+
   getState() {
     return this.sm.getState().state;
   }

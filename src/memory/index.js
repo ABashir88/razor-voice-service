@@ -11,6 +11,7 @@ import SemanticMemory from './semantic-memory.js';
 import ProceduralMemory from './procedural-memory.js';
 import LearningLoop from './learning-loop.js';
 import MemoryFile from './memory-file.js';
+import Store from './store.js';
 
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -48,6 +49,9 @@ export class MemoryAgent extends EventEmitter {
 
     /** @type {MemoryFile} — MEMORY.md file manager */
     this.memoryFile = new MemoryFile(basePath);
+
+    /** @type {Store} — atomic persistence for interaction stats */
+    this.store = new Store(basePath);
 
     this.basePath = basePath;
 
@@ -171,6 +175,11 @@ export class MemoryAgent extends EventEmitter {
   addTurn(role, content, metadata = {}) {
     this.working.addTurn(role, content, metadata);
     this.emit('memory:stored', { tier: 'working', type: 'turn', role });
+
+    // Track interactions when user speaks (not assistant echoes)
+    if (role === 'user') {
+      this.recordInteraction(metadata.action || null, metadata);
+    }
   }
 
   /**
@@ -257,6 +266,99 @@ export class MemoryAgent extends EventEmitter {
 
     this.emit('memory:recalled', { type: 'search', query });
     return { episodes, contacts, accounts };
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  INTERACTION TRACKING
+  // ═══════════════════════════════════════════════════════
+
+  /**
+   * Record an interaction (action dispatched). Persists atomically.
+   * Tracks total count, by day, and by action type.
+   * @param {string} action — action type (e.g. 'get_pipeline')
+   * @param {Object} [metadata] — optional metadata (mood, entities)
+   */
+  async recordInteraction(action, metadata = {}) {
+    try {
+      await this.store.update('learning/interaction-stats', {
+        total: 0,
+        byDay: {},
+        byType: {},
+        firstInteraction: null,
+        lastInteraction: null,
+      }, (stats) => {
+        stats.total++;
+        const today = new Date().toISOString().split('T')[0];
+        stats.byDay[today] = (stats.byDay[today] || 0) + 1;
+        if (action) {
+          stats.byType[action] = (stats.byType[action] || 0) + 1;
+        }
+        if (!stats.firstInteraction) stats.firstInteraction = new Date().toISOString();
+        stats.lastInteraction = new Date().toISOString();
+        return stats;
+      });
+    } catch (err) {
+      // Non-critical — don't crash if tracking fails
+      console.warn('[MemoryAgent] Failed to record interaction:', err.message);
+    }
+  }
+
+  /**
+   * Get interaction stats.
+   * @returns {Promise<Object>}
+   */
+  async getInteractionStats() {
+    return this.store.read('learning/interaction-stats', {
+      total: 0,
+      byDay: {},
+      byType: {},
+      firstInteraction: null,
+      lastInteraction: null,
+    });
+  }
+
+  /**
+   * Get the most common action types.
+   * @param {number} [limit=5]
+   * @returns {Promise<Array<{action: string, count: number}>>}
+   */
+  async getMostCommonActions(limit = 5) {
+    const stats = await this.getInteractionStats();
+    return Object.entries(stats.byType)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([action, count]) => ({ action, count }));
+  }
+
+  /**
+   * Get a full memory summary suitable for voice response.
+   * @returns {Promise<Object>}
+   */
+  async getMemorySummary() {
+    const [interactionStats, contacts, accounts] = await Promise.all([
+      this.getInteractionStats(),
+      this.semantic.searchContacts(''),
+      this.semantic.searchAccounts(''),
+    ]);
+
+    const topActions = Object.entries(interactionStats.byType)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([action, count]) => ({ action, count }));
+
+    const frequentContacts = (contacts || [])
+      .slice(0, 5)
+      .map(c => c.name || c.Name || 'unknown');
+
+    return {
+      totalInteractions: interactionStats.total,
+      knownContacts: (contacts || []).length,
+      knownAccounts: (accounts || []).length,
+      topActions,
+      frequentContacts,
+      firstInteraction: interactionStats.firstInteraction,
+      lastInteraction: interactionStats.lastInteraction,
+    };
   }
 
   // ═══════════════════════════════════════════════════════

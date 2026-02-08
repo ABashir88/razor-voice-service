@@ -46,9 +46,10 @@ const SERVICE_DEFS = {
   },
   fellow: {
     keys: {
-      apiKey: 'FELLOW_API_KEY',
+      apiKey:    'FELLOW_API_KEY',
+      subdomain: 'FELLOW_SUBDOMAIN',
     },
-    required: ['apiKey'],
+    required: ['apiKey', 'subdomain'],
   },
   braveSearch: {
     keys: {

@@ -66,6 +66,7 @@ export const TransitionMap = Object.freeze({
 
   [States.PROCESSING]: new Set([
     States.SPEAKING,     // AI response ready → TTS
+    States.LISTENING,    // Skip TTS (empty response) → back to listening
     States.RESEARCHING,  // AI needs live data first
     States.COACHING,     // AI enters coaching flow
     States.ERROR,        // Timeout / service down

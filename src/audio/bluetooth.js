@@ -6,7 +6,7 @@
 //   3. Auto-reconnect if disconnected
 //   4. Emit events so the pipeline can pause/resume
 
-import { execFile } from 'child_process';
+import { execFile, execFileSync } from 'child_process';
 import { promisify } from 'util';
 import EventEmitter from 'eventemitter3';
 import config from '../config.js';
@@ -14,6 +14,63 @@ import makeLogger from '../utils/logger.js';
 
 const exec = promisify(execFile);
 const log = makeLogger('BT');
+
+// ── Cooldown: prevent rapid SwitchAudioSource thrashing ──
+let lastSwitchTime = 0;
+const SWITCH_COOLDOWN_MS = 5000;
+let lockInterval = null;
+
+// ── Fast synchronous BT output check ──
+// Called before every ack/playback to ensure audio goes to X8 Pro.
+// SwitchAudioSource is <10ms, so blocking briefly is acceptable.
+// Verifies the switch took effect and retries once if it didn't.
+// Skips if last switch was within SWITCH_COOLDOWN_MS (prevents thrashing).
+export function ensureBluetoothOutput(force = false) {
+  const now = Date.now();
+  if (!force && (now - lastSwitchTime) < SWITCH_COOLDOWN_MS) {
+    return; // Within cooldown — skip
+  }
+
+  const target = config.bluetooth.deviceName.toLowerCase();
+  try {
+    const current = execFileSync('SwitchAudioSource', ['-c', '-t', 'output'], { encoding: 'utf8' }).trim();
+
+    if (!current.toLowerCase().includes(target)) {
+      log.info(`Quick switch: "${current}" → "${config.bluetooth.deviceName}"`);
+      execFileSync('SwitchAudioSource', ['-s', config.bluetooth.deviceName, '-t', 'output']);
+      lastSwitchTime = Date.now();
+
+      // Verify the switch took effect
+      const after = execFileSync('SwitchAudioSource', ['-c', '-t', 'output'], { encoding: 'utf8' }).trim();
+      if (!after.toLowerCase().includes(target)) {
+        log.warn(`BT switch failed (got "${after}"), retrying...`);
+        execFileSync('SwitchAudioSource', ['-s', config.bluetooth.deviceName, '-t', 'output']);
+        lastSwitchTime = Date.now();
+      }
+    }
+  } catch {
+    log.warn('Could not verify output device (SwitchAudioSource)');
+  }
+}
+
+// ── Lock Bluetooth output: force-switch on startup and re-enforce every 10s ──
+// Call once at startup to guarantee audio never drifts to Mac speakers.
+export function lockBluetooth() {
+  ensureBluetoothOutput(true);
+  if (lockInterval) clearInterval(lockInterval);
+  lockInterval = setInterval(() => ensureBluetoothOutput(true), 10000);
+  if (lockInterval.unref) lockInterval.unref();
+  log.info('Bluetooth output LOCKED (re-enforcing every 10s)');
+}
+
+// ── Unlock Bluetooth: stop the lock enforcement loop ──
+export function unlockBluetooth() {
+  if (lockInterval) {
+    clearInterval(lockInterval);
+    lockInterval = null;
+  }
+  log.info('Bluetooth output UNLOCKED');
+}
 
 class BluetoothMonitor extends EventEmitter {
   constructor() {

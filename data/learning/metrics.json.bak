@@ -1,17 +1,17 @@
 {
-  "totalConversations": 10,
+  "totalConversations": 64,
   "outcomes": {
     "positive": 0,
     "neutral": 0,
     "negative": 0,
     "follow_up": 0,
     "completed": 4,
-    "shutdown": 6
+    "shutdown": 60
   },
   "winRate": 0,
   "streaks": {
     "current": 0,
     "best": 0
   },
-  "lastUpdated": "2026-02-06T05:20:35.573Z"
+  "lastUpdated": "2026-02-08T01:53:07.384Z"
 }

@@ -14,12 +14,18 @@ import { log, logError } from '../lib/log.js';
  * @param {string} text - Text to synthesize
  * @param {object} config - Config with telnyx.ttsEndpoint, telnyx.ttsVoice, telnyx.ttsMaxChars
  * @param {string} apiKey - Telnyx API key
+ * @param {object} moodParams - Optional mood-based TTS params { pace, pitch }
  * @returns {Buffer} MP3 audio buffer
  */
-export async function synthesize(text, config, apiKey) {
+export async function synthesize(text, config, apiKey, moodParams = {}) {
   // Clean markdown for voice
   const clean = cleanForSpeech(text);
   if (!clean) return null;
+
+  const { pace = 'normal', pitch = 'normal' } = moodParams;
+  if (pace !== 'normal' || pitch !== 'normal') {
+    log('🔊', `Mood TTS: pace=${pace}, pitch=${pitch}`);
+  }
 
   const maxChars = config.telnyx.ttsMaxChars || 950;
   const voice = config.telnyx.ttsVoice;

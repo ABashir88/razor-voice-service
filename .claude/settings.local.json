@@ -39,7 +39,8 @@
       "Bash(python -c:*)",
       "Bash(gtimeout 10 node:*)",
       "Bash(sf:*)",
-      "Bash(afplay:*)"
+      "Bash(afplay:*)",
+      "Bash(TKEY=\"$TELNYX_API_KEY\")"
     ]
   }
 }

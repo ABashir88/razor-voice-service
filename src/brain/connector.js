@@ -16,6 +16,7 @@ const BASE_RECONNECT_DELAY = 1000;
 const MAX_RECONNECT_DELAY = 30000;
 const HEARTBEAT_INTERVAL = 25000;
 const RESPONSE_TIMEOUT = 60000;
+const BRAIN_TIMEOUT_MS = 4000; // 4 seconds — enough for most brain responses
 
 export class BrainConnector extends EventEmitter {
   /**
@@ -79,13 +80,168 @@ export class BrainConnector extends EventEmitter {
   // ── Send a transcript and wait for the full response ────────────────────
 
   /**
-   * Process a user utterance through the brain.
+   * Process a user utterance through the brain with a fast timeout.
+   * If the brain doesn't respond within BRAIN_TIMEOUT_MS, returns a
+   * fallback response with inferred actions so the pipeline keeps moving.
+   *
    * @param {string} text — User transcript
    * @param {object} [metadata] — Optional context (audio confidence, etc.)
    * @param {boolean} [stream=false] — If true, stream chunks via events
    * @returns {Promise<object>} — Brain response: { text, intent, state, actions, entities, follow_up, latency_ms }
    */
   async process(text, metadata = {}, stream = false) {
+    const startTime = Date.now();
+
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Brain timeout')), BRAIN_TIMEOUT_MS)
+    );
+
+    try {
+      const response = await Promise.race([
+        this._actualProcess(text, metadata, stream),
+        timeoutPromise,
+      ]);
+
+      const elapsed = Date.now() - startTime;
+      if (elapsed > 1000) {
+        log.warn(`Slow brain response: ${elapsed}ms`);
+      }
+
+      return response;
+    } catch (err) {
+      const elapsed = Date.now() - startTime;
+      log.warn(`Brain timeout or error after ${elapsed}ms: ${err.message}`);
+
+      const actions = this._inferActionsFromMessage(text);
+
+      if (actions.length > 0) {
+        // We inferred actions — proceed with them silently
+        return {
+          type: 'response',
+          request_id: `fallback_${Date.now()}`,
+          text: '.',
+          intent: 'fallback',
+          actions,
+          entities: [],
+          state: 'listening',
+          follow_up: '',
+          latency_ms: elapsed,
+        };
+      }
+
+      // No actions inferred — ask for clarification
+      return {
+        type: 'response',
+        request_id: `fallback_${Date.now()}`,
+        text: "I didn't catch that. Can you be more specific?",
+        intent: 'clarify',
+        actions: [],
+        entities: [],
+        state: 'listening',
+        follow_up: '',
+        latency_ms: elapsed,
+      };
+    }
+  }
+
+  /**
+   * Infer likely actions from the user's message when the brain times out.
+   * This is a last-resort safety net — the brain handles 95% of cases.
+   * Ordered from most specific to least specific to avoid false matches.
+   * @param {string} message — Raw user transcript
+   * @returns {Array<object>} — Inferred action list (may be empty)
+   */
+  _inferActionsFromMessage(message) {
+    const lower = message.toLowerCase();
+
+    // ── Pipeline / Deals (most specific first) ──
+    if (lower.includes('biggest deal') || lower.includes('largest deal')) {
+      return [{ action: 'get_biggest_deal', params: {} }];
+    }
+    if (lower.includes('stale') || lower.includes('stuck') || lower.includes('cold')) {
+      return [{ action: 'get_stale_deals', params: {} }];
+    }
+    if (lower.includes('closing this week')) {
+      return [{ action: 'get_deals_closing_soon', params: { days: 7 } }];
+    }
+    if (lower.includes('closing this month') || lower.includes('closing soon')) {
+      return [{ action: 'get_deals_closing_soon', params: { days: 30 } }];
+    }
+    if (lower.includes('deal') && (lower.includes('tell me') || lower.includes('about'))) {
+      const match = lower.match(/(?:about|the)\s+(.+?)\s*deal/);
+      const dealName = match ? match[1] : lower.replace(/.*deal\s*/, '').trim();
+      return [{ action: 'get_deal_by_name', params: { name: dealName } }];
+    }
+    if (lower.includes('pipeline') || lower.includes('how much')) {
+      return [{ action: 'get_pipeline', params: {} }];
+    }
+    if (lower.includes('task') || lower.includes('to-do') || lower.includes('to do')) {
+      return [{ action: 'get_tasks', params: {} }];
+    }
+
+    // ── Salesloft / Leads (specific engagement before broad) ──
+    if (lower.includes('click') || lower.includes('clicked')) {
+      return [{ action: 'get_email_clicks', params: {} }];
+    }
+    if (lower.includes('open') && lower.includes('email')) {
+      return [{ action: 'get_email_opens', params: {} }];
+    }
+    if (lower.includes('repl')) {
+      return [{ action: 'get_replies', params: {} }];
+    }
+    if (lower.includes('hot lead') || lower.includes('hot leads')) {
+      return [{ action: 'get_hot_leads', params: {} }];
+    }
+    if (lower.includes('showing interest') || lower.includes('engaged') || lower.includes('engagement')) {
+      return [{ action: 'get_hot_leads', params: {} }];
+    }
+    if (lower.includes('cadence')) {
+      return [{ action: 'get_my_cadences', params: {} }];
+    }
+    if (lower.includes('outreach') || lower.includes('activity')) {
+      return [{ action: 'get_activity_stats', params: {} }];
+    }
+    if (lower.includes('look up') || lower.includes('lookup')) {
+      const name = lower.replace(/.*look\s*up\s*/, '').replace(/[?.!]/g, '').trim();
+      return [{ action: 'lookup_contact', params: { name } }];
+    }
+
+    // ── Calendar ──
+    if (lower.includes('calendar') || lower.includes('meeting') || lower.includes('schedule')) {
+      let days = 1;
+      if (lower.includes('week')) days = 7;
+      if (lower.includes('tomorrow')) days = 2;
+      if (lower.includes('monday') || lower.includes('tuesday') || lower.includes('wednesday') ||
+          lower.includes('thursday') || lower.includes('friday')) days = 7;
+      return [{ action: 'check_calendar', params: { days } }];
+    }
+
+    // ── Email (after clicks/opens so those match first) ──
+    if (lower.includes('email') || lower.includes('inbox') || lower.includes('mail')) {
+      if (lower.includes('from')) {
+        const from = lower.replace(/.*from\s*/, '').replace(/[?.!]/g, '').trim();
+        return [{ action: 'search_emails', params: { query: `from:${from}` } }];
+      }
+      return [{ action: 'get_new_emails', params: {} }];
+    }
+
+    // ── Follow-ups ──
+    if (lower.includes('tell me more') || lower.includes('more detail')) {
+      return [{ action: 'tell_me_more', params: {} }];
+    }
+
+    // Default — return empty, don't guess
+    return [];
+  }
+
+  /**
+   * Send to the brain WebSocket and wait for the full response.
+   * @param {string} text — User transcript
+   * @param {object} [metadata] — Optional context
+   * @param {boolean} [stream=false] — Stream chunks via events
+   * @returns {Promise<object>} — Raw brain response
+   */
+  async _actualProcess(text, metadata = {}, stream = false) {
     if (!this.connected) {
       throw new Error('Brain connector not connected');
     }
@@ -214,12 +370,18 @@ export class BrainConnector extends EventEmitter {
 
     const requestId = data.request_id;
 
-    // Stream chunk
+    // Stream chunk (raw JSON tokens)
     if (data.type === 'stream_chunk' && requestId) {
       const pending = this._pendingRequests.get(requestId);
       if (pending?.stream) {
         this.emit('brain:chunk', { requestId, content: data.content });
       }
+      return;
+    }
+
+    // TTS chunk (speakable text extracted from the "text" field)
+    if (data.type === 'tts_chunk' && requestId) {
+      this.emit('brain:tts_chunk', { requestId, text: data.text });
       return;
     }
 

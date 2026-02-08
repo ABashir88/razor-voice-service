@@ -46,6 +46,26 @@ const DATA_FETCH_ACTIONS = new Set([
   'get_pipeline', 'check_pipeline',
   'create_reminder', 'set_reminder', 'remind',
   'log_call', 'log_interaction', 'log_activity', 'log',
+  // Fellow actions
+  'get_action_items', 'get_tasks', 'my_action_items', 'action_items',
+  'get_overdue_items', 'overdue_tasks',
+  'last_meeting', 'get_last_meeting', 'how_did_my_call_go', 'get_activity_stats',
+  'coach_me', 'coaching_insights', 'get_coaching',
+  'get_talk_ratio', 'talk_ratio',
+  'get_today_meetings', 'todays_meetings', 'meetings_today',
+  'search_meetings', 'meeting_summary', 'get_meeting_recap',
+  'get_transcript', 'get_call_transcript', 'get_recent_call_transcript', 'transcript',
+  'recent_recordings', 'get_recordings', 'recordings_this_week', 'get_recent_call_recording',
+  'get_recent_notes', 'notes_last_week',
+  'get_meeting_actions', 'meeting_action_items',
+  // Salesloft actions
+  'get_hot_leads', 'hot_leads',
+  'get_email_opens', 'email_opens', 'who_opened',
+  'get_email_clicks', 'email_clicks', 'who_clicked',
+  'get_replies', 'who_replied',
+  'get_my_cadences', 'my_cadences', 'cadences',
+  'activity_stats',
+  'get_biggest_deal', 'biggest_deal', 'largest_deal',
 ]);
 
 async function dispatchAction(action) {
@@ -153,7 +173,7 @@ async function dispatchAction(action) {
 
       case 'get_pipeline':
       case 'check_pipeline':
-        if (integrations.salesloft) {
+        if (false && integrations.salesloft) {
           return await integrations.salesloft.getPipeline(params);
         }
         if (integrations.salesforce) {
@@ -211,6 +231,233 @@ async function dispatchAction(action) {
         }
         log.warn('Salesforce not available for CRM update');
         return null;
+
+
+      // ═══════════════════════════════════════════════════════════════════════
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // SALESLOFT — Email Engagement, Cadences, Activity Stats
+      // ═══════════════════════════════════════════════════════════════════════
+
+      case 'get_hot_leads':
+      case 'hot_leads': {
+        if (integrations.salesloft) {
+          const leads = await integrations.salesloft.getHotLeads();
+          if (!leads?.length) return "No hot leads right now.";
+          const top3 = leads.slice(0, 3).map(l => l.name || l.email).join(", ");
+          return `${leads.length} hot lead${leads.length > 1 ? "s" : ""}: ${top3}.`;
+        }
+        return "Salesloft not connected.";
+      }
+
+      case 'get_email_opens':
+      case 'email_opens':
+      case 'who_opened': {
+        if (integrations.salesloft) {
+          const opens = await integrations.salesloft.getEmailOpens();
+          if (!opens?.length) return "No email opens recently.";
+          const top3 = opens.slice(0, 3).map(o => o.name || o.email).join(", ");
+          return `${opens.length} open${opens.length > 1 ? "s" : ""}: ${top3}.`;
+        }
+        return "Salesloft not connected.";
+      }
+
+      case 'get_email_clicks':
+      case 'email_clicks':
+      case 'who_clicked': {
+        if (integrations.salesloft) {
+          const clicks = await integrations.salesloft.getEmailClicks();
+          if (!clicks?.length) return "No email clicks recently.";
+          const top3 = clicks.slice(0, 3).map(c => c.name || c.email).join(", ");
+          return `${clicks.length} click${clicks.length > 1 ? "s" : ""}: ${top3}.`;
+        }
+        return "Salesloft not connected.";
+      }
+
+      case 'get_replies':
+      case 'who_replied': {
+        if (integrations.salesloft) {
+          const replies = await integrations.salesloft.getReplies();
+          if (!replies?.length) return "No replies recently.";
+          const top3 = replies.slice(0, 3).map(r => r.name || r.email).join(", ");
+          return `${replies.length} repl${replies.length > 1 ? "ies" : "y"}: ${top3}.`;
+        }
+        return "Salesloft not connected.";
+      }
+
+      case 'get_my_cadences':
+      case 'my_cadences':
+      case 'cadences': {
+        if (integrations.salesloft) {
+          const cadences = await integrations.salesloft.getMyCadences();
+          if (!cadences?.length) return "No active cadences.";
+          const top3 = cadences.slice(0, 3).map(c => c.name).join(", ");
+          return `${cadences.length} cadence${cadences.length > 1 ? "s" : ""}: ${top3}.`;
+        }
+        return "Salesloft not connected.";
+      }
+
+      case 'get_activity_stats':
+      case 'activity_stats': {
+        if (integrations.salesloft) {
+          const stats = await integrations.salesloft.getActivityStats();
+          if (!stats) return "Could not get activity stats.";
+          return `Today: ${stats.calls || 0} calls, ${stats.emails || 0} emails.`;
+        }
+        return "Salesloft not connected.";
+      }
+
+      case 'get_biggest_deal':
+      case 'biggest_deal':
+      case 'largest_deal': {
+        if (integrations.salesforce) {
+          const opps = await integrations.salesforce.queryOpportunities({ orderBy: "Amount DESC", limit: 1 });
+          if (!opps?.length) return "No open deals found.";
+          const deal = opps[0];
+          const amt = deal.Amount ? `$${(deal.Amount/1000).toFixed(0)}k` : "";
+          return `Biggest deal: ${deal.Name} ${amt}.`;
+        }
+        return "Salesforce not connected.";
+      }
+
+      // FELLOW — Action Items, Meetings, Coaching, Transcripts
+      // ═══════════════════════════════════════════════════════════════════════
+
+      case 'get_action_items':
+      case 'get_tasks':
+      case 'my_action_items':
+      case 'action_items': {
+        if (integrations.fellow) {
+          const items = await integrations.fellow.getMyActionItems();
+          if (!items?.length) return "No open action items right now.";
+          const top3 = items.slice(0, 3).map(i => i.title || i.text).join(". ");
+          return `You have ${items.length} action item${items.length > 1 ? "s" : ""}. ${top3}.`;
+        }
+        return "Fellow not connected.";
+      }
+
+      case 'get_overdue_items':
+      case 'overdue_tasks': {
+        if (integrations.fellow) {
+          const items = await integrations.fellow.getOverdueItems();
+          if (!items?.length) return "Nothing overdue. You are all caught up.";
+          const top3 = items.slice(0, 3).map(i => i.title || i.text).join(". ");
+          return `${items.length} overdue item${items.length > 1 ? "s" : ""}. ${top3}.`;
+        }
+        return "Fellow not connected.";
+      }
+
+      case 'last_meeting':
+      case 'get_last_meeting':
+      case 'how_did_my_call_go':
+      case 'get_activity_stats': {
+        if (integrations.fellow) {
+          const summary = await integrations.fellow.getLastMeetingSummary();
+          if (!summary) return "No recent meetings found.";
+          return summary.summary || `Last meeting: ${summary.title}. ${summary.duration || ""}`;
+        }
+        return "Fellow not connected.";
+      }
+
+      case 'coach_me':
+      case 'coaching_insights':
+      case 'get_coaching': {
+        if (integrations.fellow) {
+          const insights = await integrations.fellow.getCoachingInsights();
+          if (!insights) return "No coaching data available yet.";
+          return insights.summary || insights;
+        }
+        return "Fellow not connected.";
+      }
+
+      case 'get_talk_ratio':
+      case 'talk_ratio': {
+        if (integrations.fellow) {
+          const rec = await integrations.fellow.getLastRecording();
+          if (!rec) return "No recent recordings to analyze.";
+          const analytics = await integrations.fellow.getTranscriptAnalytics(rec.id);
+          if (!analytics) return "Could not get talk ratio.";
+          return `Your talk ratio was ${analytics.userTalkRatio || "unknown"}. ${analytics.summary || ""}`;
+        }
+        return "Fellow not connected.";
+      }
+
+      case 'get_today_meetings':
+      case 'todays_meetings':
+      case 'meetings_today': {
+        if (integrations.fellow) {
+          const meetings = await integrations.fellow.getTodaysMeetings();
+          if (!meetings?.length) return "No meetings scheduled for today.";
+          const names = meetings.slice(0, 3).map(m => m.title).join(", ");
+          return `${meetings.length} meeting${meetings.length > 1 ? "s" : ""} today: ${names}.`;
+        }
+        return "Fellow not connected.";
+      }
+
+      case 'search_meetings':
+      case 'meeting_summary':
+      case 'get_meeting_recap': {
+        if (integrations.fellow) {
+          const query = params.query || params.company || params.name;
+          if (!query) return "Who or what company should I search for?";
+          const summary = await integrations.fellow.getMeetingSummaryBySearch(query);
+          if (!summary) return `No meetings found for ${query}.`;
+          return summary.summary || `Found meeting: ${summary.title}.`;
+        }
+        return "Fellow not connected.";
+      }
+
+      case 'get_transcript':
+      case 'get_call_transcript':
+      case 'get_recent_call_transcript':
+      case 'transcript': {
+        if (integrations.fellow) {
+          const rec = await integrations.fellow.getLastRecording();
+          if (!rec) return "No recent recordings found.";
+          const text = await integrations.fellow.getTranscriptText(rec.id);
+          if (!text) return "Transcript not available.";
+          return text.slice(0, 300) + (text.length > 300 ? "..." : "");
+        }
+        return "Fellow not connected.";
+      }
+
+      case 'recent_recordings':
+      case 'get_recent_call_recording':
+      case 'get_recordings':
+      case 'recordings_this_week': {
+        if (integrations.fellow) {
+          const recs = await integrations.fellow.getRecentRecordings(7);
+          if (!recs?.length) return "No recordings in the last week.";
+          const names = recs.slice(0, 3).map(r => r.title || "Untitled").join(", ");
+          return `${recs.length} recording${recs.length > 1 ? "s" : ""} this week: ${names}.`;
+        }
+        return "Fellow not connected.";
+      }
+
+      case 'get_recent_notes':
+      case 'notes_last_week': {
+        if (integrations.fellow) {
+          const notes = await integrations.fellow.getRecentNotes(7);
+          if (!notes?.length) return "No meeting notes from last week.";
+          const names = notes.slice(0, 3).map(n => n.title).join(", ");
+          return `${notes.length} meeting note${notes.length > 1 ? "s" : ""}: ${names}.`;
+        }
+        return "Fellow not connected.";
+      }
+
+      case 'get_meeting_actions':
+      case 'meeting_action_items': {
+        if (integrations.fellow) {
+          const query = params.query || params.company || params.name;
+          const notes = query ? await integrations.fellow.searchNotes(query) : await integrations.fellow.getRecentNotes(7);
+          if (!notes?.length) return query ? `No meetings found for ${query}.` : "No recent meetings.";
+          const items = await integrations.fellow.getActionItemsForMeeting(notes[0].id);
+          if (!items?.length) return `No action items from ${notes[0].title}.`;
+          const top3 = items.slice(0, 3).map(i => i.title || i.text).join(". ");
+          return `Action items from ${notes[0].title}: ${top3}.`;
+        }
+        return "Fellow not connected.";
+      }
 
       default:
         log.warn(`Unknown action type: ${type} | params: ${JSON.stringify(params)}`);

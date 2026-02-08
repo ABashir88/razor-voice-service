@@ -61,7 +61,7 @@ const config = Object.freeze({
   // ── VAD ──
   vad: Object.freeze({
     energyThreshold: envFloat('VAD_ENERGY_THRESHOLD', 0.004),
-    silenceDurationMs: envInt('VAD_SILENCE_DURATION_MS', 300),
+    silenceDurationMs: envInt('VAD_SILENCE_DURATION_MS', 600),
     speechMinMs: envInt('VAD_SPEECH_MIN_MS', 150),
   }),
 
@@ -79,13 +79,15 @@ const config = Object.freeze({
 
     telnyx: Object.freeze({
       apiKey: env('TELNYX_API_KEY', ''),
-      // ── Voice recommendation ──
-      // Best male voices on Telnyx (ranked by naturalness):
-      //   1. Telnyx.KokoroTTS.am_adam    – warm, natural pacing
-      //   2. Telnyx.KokoroTTS.am_michael – clear, authoritative
-      //   3. Telnyx.Natural.alpine       – conversational
-      //   4. Telnyx.NaturalHD.orion      – HD quality, deeper
-      voice: env('TELNYX_VOICE', 'Telnyx.KokoroTTS.am_adam'),
+      // ── Voice recommendation (Natural tier: 24kHz/160kbps vs Kokoro 22kHz/32kbps) ──
+      // Best male Natural voices (ranked by latency + clarity):
+      //   1. Telnyx.Natural.boulder  – 750ms, 24kHz/160kbps, clear
+      //   2. Telnyx.Natural.armon    – 757ms, 24kHz/160kbps, clear
+      //   3. Telnyx.Natural.thunder  – 771ms, 24kHz/160kbps, deep
+      //   4. Telnyx.Natural.blaze    – 793ms, 24kHz/160kbps, warm
+      // Kokoro voices (22kHz/32kbps — lower quality, slightly faster):
+      //   Telnyx.KokoroTTS.am_adam, am_michael, am_eric, am_onyx
+      voice: env('TELNYX_VOICE', 'Telnyx.Natural.boulder'),
       endpoint: 'https://api.telnyx.com/v2/text-to-speech/speech',
     }),
 
@@ -111,8 +113,8 @@ const config = Object.freeze({
 
   // ── Dynamic Pacing ──
   pacing: Object.freeze({
-    urgent: Object.freeze({ rate: 1.15, pitch: '+2st', pauseMs: 200 }),
-    normal: Object.freeze({ rate: 1.0,  pitch: '+0st', pauseMs: 400 }),
+    urgent: Object.freeze({ rate: 1.05, pitch: '+2st', pauseMs: 200 }),
+    normal: Object.freeze({ rate: 1.00, pitch: '+0st', pauseMs: 400 }),
     calm:   Object.freeze({ rate: 0.90, pitch: '-1st', pauseMs: 600 }),
   }),
 

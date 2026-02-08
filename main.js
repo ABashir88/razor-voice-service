@@ -26,6 +26,8 @@ import { synthesize, cleanForSpeech } from './api/tts.js';
 import { GatewayClient } from './api/openclaw.js';
 import { StateMachine } from './state/machine.js';
 import { ProactiveEngine } from './state/proactive.js';
+import { detectMood, getMoodPrefix, getMoodTTSParams } from './src/utils/mood-detector.js';
+import { naturalize } from './src/utils/naturalizer.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TMP_DIR = join(tmpdir(), 'razor-voice');
@@ -53,20 +55,31 @@ let processing = false;
 let micAvailable = false;
 let wakewordActive = false;
 let wasInterrupted = false;
+let currentMood = 'neutral';
 
 // ─── Core Voice Functions ─────────────────────────────────────────────────────
 
-async function speak(text) {
+async function speak(text, ttsParams = {}) {
   if (!text) return;
   try {
     const clean = cleanForSpeech(text);
     if (!clean) return;
     log('🔊', `Speaking ${clean.length} chars`);
-    const audio = await synthesize(text, config, TELNYX_API_KEY);
+    const audio = await synthesize(text, config, TELNYX_API_KEY, ttsParams);
     if (audio) await playAudio(audio);
   } catch (err) {
     logError('Speak failed', err);
   }
+}
+
+/**
+ * Format response for speech with mood-appropriate prefix and natural phrasing.
+ */
+function formatResponseForSpeech(response, mood = 'neutral') {
+  const prefix = getMoodPrefix(mood);
+  response = prefix + response;
+  response = naturalize(response);
+  return response;
 }
 
 /**
@@ -86,6 +99,10 @@ async function processAudio(wavPath) {
     // 1. Transcribe
     const transcript = await transcribe(wavPath, config, TELNYX_API_KEY);
     if (!transcript) { processing = false; return; }
+
+    // 1.5. Detect mood from user input
+    const { mood, confidence } = detectMood(transcript);
+    currentMood = mood;
 
     // 2. Build the message with voice context
     const voiceMessage = buildVoiceMessage(transcript);
@@ -108,10 +125,12 @@ async function processAudio(wavPath) {
       await sm.transition(stateChange);
     }
 
-    // 6. Speak the response (without the state directive)
+    // 6. Apply mood formatting + naturalization, then speak
     if (cleanResponse) {
-      log('💬', `${cleanResponse.substring(0, 100)}${cleanResponse.length > 100 ? '...' : ''}`);
-      await speak(cleanResponse);
+      const spokenResponse = formatResponseForSpeech(cleanResponse, currentMood);
+      const ttsParams = getMoodTTSParams(currentMood);
+      log('💬', `[${currentMood}] ${spokenResponse.substring(0, 100)}${spokenResponse.length > 100 ? '...' : ''}`);
+      await speak(spokenResponse, ttsParams);
     }
 
     sm.stats.lastActivity = Date.now();

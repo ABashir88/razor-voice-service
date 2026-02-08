@@ -20,6 +20,7 @@ import { tmpdir } from 'os';
 import { randomUUID } from 'crypto';
 import { promisify } from 'util';
 import EventEmitter from 'eventemitter3';
+import { ensureBluetoothOutput } from './bluetooth.js';
 import config from '../config.js';
 import makeLogger from '../utils/logger.js';
 
@@ -35,15 +36,22 @@ class AudioPlayback extends EventEmitter {
     this._deviceEnforcer = null; // interval that forces BT output during playback
   }
 
-  // ── Force macOS audio output to BT speaker, wait for settle, confirm ──
+  // ── Force macOS audio output to BT speaker, wait for settle, verify ──
   async _forceOutputDevice() {
     const target = config.bluetooth.deviceName;
     try {
       await execFileAsync('SwitchAudioSource', ['-t', 'output', '-s', target]);
-      await new Promise((r) => setTimeout(r, 100));
+      await new Promise((r) => setTimeout(r, 80));
 
       const { stdout } = await execFileAsync('SwitchAudioSource', ['-t', 'output', '-c']);
       const actual = stdout.trim();
+
+      if (!actual.toLowerCase().includes(target.toLowerCase())) {
+        log.warn(`Device mismatch: "${actual}" — retrying switch to "${target}"`);
+        await execFileAsync('SwitchAudioSource', ['-t', 'output', '-s', target]);
+        await new Promise((r) => setTimeout(r, 80));
+      }
+
       log.info(`Device BEFORE play: ${actual}`);
     } catch (err) {
       log.warn('Could not set output device:', err.message);
@@ -65,16 +73,16 @@ class AudioPlayback extends EventEmitter {
     }
   }
 
-  // ── Device enforcement: re-forces X8 Pro every 500ms while afplay is running ──
+  // ── Device enforcement: re-forces X8 Pro every 200ms while afplay is running ──
   // afplay follows the macOS system default output device. If macOS switches it
   // mid-stream (BT codec renegotiation, power management, etc.), audio jumps to
-  // Mac mini speakers. This loop forces it back within 500ms.
+  // Mac mini speakers. This loop forces it back within 200ms.
   _startDeviceEnforcer() {
     const target = config.bluetooth.deviceName;
     this._deviceEnforcer = setInterval(() => {
       // Fire-and-forget — don't block the event loop, don't care if it fails once
       execFileAsync('SwitchAudioSource', ['-t', 'output', '-s', target]).catch(() => {});
-    }, 500);
+    }, 200);
   }
 
   _stopDeviceEnforcer() {
@@ -117,7 +125,7 @@ class AudioPlayback extends EventEmitter {
 
       this.process = spawn('afplay', args, { stdio: 'ignore' });
 
-      // Start device enforcement loop — forces X8 Pro every 500ms during playback
+      // Start device enforcement loop — forces X8 Pro every 200ms during playback
       this._startDeviceEnforcer();
 
       this.process.on('close', async (code, signal) => {
@@ -161,7 +169,12 @@ class AudioPlayback extends EventEmitter {
 
   // ── Play a file directly without emitting events (for quick acks) ──
   playFile(filepath) {
-    const proc = spawn('afplay', [filepath, '-r', '1.1'], { stdio: 'ignore' });
+    // Ensure BT output before playing — prevents ack on Mac mini speakers
+    // ensureBluetoothOutput() now verifies + retries the switch
+    ensureBluetoothOutput();
+
+    const paceConfig = config.pacing.normal || { rate: 1.2 };
+    const proc = spawn('afplay', [filepath, '-r', String(paceConfig.rate)], { stdio: 'ignore' });
     proc.on('error', (err) => log.debug('Quick playback error:', err.message));
     return proc;
   }

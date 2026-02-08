@@ -1,0 +1,86 @@
+{
+  "totalCycles": 2,
+  "currentSession": 2,
+  "cyclesSinceHumanCheck": 2,
+  "startedAt": "2026-02-06T23:18:15.267Z",
+  "lastCycleAt": "2026-02-06T23:25:33.932Z",
+  "lastHumanCheckAt": null,
+  "totalBuildTimeHours": 0,
+  "tasksGenerated": 4,
+  "tasksCompleted": 6,
+  "tasksFailed": 0,
+  "currentPhase": "phase4",
+  "phases": {
+    "phase1": {
+      "name": "Foundation",
+      "percent": 100,
+      "completedAt": "2025-02-01"
+    },
+    "phase2": {
+      "name": "Functionality",
+      "percent": 100,
+      "completedAt": "2025-02-04"
+    },
+    "phase3": {
+      "name": "Humanization",
+      "percent": 100,
+      "completedAt": "2026-02-06T23:18:15.508Z"
+    },
+    "phase4": {
+      "name": "Intelligence",
+      "percent": 100,
+      "completedAt": "2026-02-06T23:18:15.509Z"
+    },
+    "phase5": {
+      "name": "Learning",
+      "percent": 40,
+      "completedAt": null
+    },
+    "phase6": {
+      "name": "Autonomy",
+      "percent": 50,
+      "completedAt": null
+    }
+  },
+  "agentStats": {
+    "1": {
+      "tasksCompleted": 2,
+      "lastTask": "2026-02-07T00:51:10.539Z"
+    },
+    "2": {
+      "tasksCompleted": 2,
+      "lastTask": "2026-02-07T01:05:11.621Z"
+    },
+    "3": {
+      "tasksCompleted": 0,
+      "lastTask": null
+    },
+    "4": {
+      "tasksCompleted": 0,
+      "lastTask": null
+    },
+    "5": {
+      "tasksCompleted": 0,
+      "lastTask": null
+    },
+    "6": {
+      "tasksCompleted": 2,
+      "lastTask": "2026-02-07T00:52:07.334Z"
+    }
+  },
+  "feedbackHistory": [],
+  "status": "running",
+  "waitingReason": null,
+  "milestones": [
+    {
+      "timestamp": "2026-02-06T23:18:15.508Z",
+      "cycle": 1,
+      "description": "Humanization phase completed!"
+    },
+    {
+      "timestamp": "2026-02-06T23:18:15.509Z",
+      "cycle": 1,
+      "description": "Intelligence phase completed!"
+    }
+  ]
+}

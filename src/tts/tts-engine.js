@@ -3,12 +3,16 @@
 // ── Voice Quality Research & Recommendations ──
 //
 // TELNYX (recommended for low latency + cost):
-//   Best male voices (ranked by naturalness):
-//   1. Telnyx.KokoroTTS.am_adam    – warm, natural pacing
-//   2. Telnyx.KokoroTTS.am_michael – clear, authoritative
-//   3. Telnyx.Natural.alpine       – conversational
-//   4. Telnyx.NaturalHD.orion      – HD quality, deeper
-//   Latency: ~500-1300ms first byte | Cost: included in Telnyx plan
+//   Natural tier (24kHz / 160kbps — best quality-to-latency ratio):
+//   1. Telnyx.Natural.boulder  – clear, ~750ms
+//   2. Telnyx.Natural.armon    – clear, ~757ms
+//   3. Telnyx.Natural.thunder  – deep, ~771ms
+//   4. Telnyx.Natural.blaze    – warm, ~793ms
+//   Kokoro tier (22kHz / 32kbps — faster but muddy audio):
+//     Telnyx.KokoroTTS.am_adam, am_michael, am_eric
+//   NaturalHD tier (24kHz / 160kbps — same quality as Natural but 2-3x slower):
+//     Telnyx.NaturalHD.orion (~2700ms)
+//   Latency: ~750-1100ms (Natural) | Cost: included in Telnyx plan
 //
 // ELEVENLABS (alternative for maximum naturalness):
 //   Best male voices (ranked):
@@ -44,28 +48,70 @@ class TtsEngine {
     this.provider = this._resolveProvider();
     this._ackFiles = []; // Pre-cached acknowledgment audio file paths
     log.info(`TTS provider: ${this.provider}`);
+
+    // Log full TTS config for debugging audio quality
+    const ttsConf = {
+      provider: this.provider,
+      voice: this.provider === 'telnyx' ? config.tts.telnyx.voice
+        : this.provider === 'elevenlabs' ? config.tts.elevenlabs.voiceId
+        : config.tts.macos.voice,
+      model: this.provider === 'elevenlabs' ? config.tts.elevenlabs.model : 'n/a',
+      maxChars: config.tts.maxCharsForSpeed,
+      pacing: config.pacing,
+    };
+    log.info(`[TTS] Config: ${JSON.stringify(ttsConf)}`);
+
+    // Warn if using a Kokoro voice — 22kHz/32kbps produces muddy audio
+    if (this.provider === 'telnyx') {
+      const voice = config.tts.telnyx.voice;
+      if (voice.toLowerCase().includes('kokoro')) {
+        log.warn(`[TTS] ⚠ Using Kokoro voice "${voice}" (22kHz/32kbps — muddy audio)`);
+        log.warn(`[TTS] ⚠ Switch to Natural tier for clarity: TELNYX_VOICE=Telnyx.Natural.boulder`);
+      } else {
+        log.info(`[TTS] Voice tier OK: Natural (24kHz/160kbps)`);
+      }
+    }
   }
 
   /**
-   * Pre-generate a subtle acknowledgment tone for instant playback.
-   * Uses sox to create a short, quiet tone — nearly imperceptible, like a nod.
-   * Called at startup so the ack plays with zero latency.
+   * Pre-generate verbal acknowledgment sounds for instant playback.
+   * Uses macOS `say` to create short, natural-sounding ack phrases.
+   * Falls back to a sox beep tone if say fails.
+   * Called at startup so acks play with zero latency.
    */
   async warmup() {
-    // Generate a 100ms, 660Hz sine wave at low volume with smooth fades
-    // Result: a soft "blip" — not a voice, not jarring, just a subtle cue
-    const filepath = join(tmpdir(), 'razor-ack-tone.wav');
-    try {
-      await execFileAsync('sox', [
-        '-n', filepath,
-        'synth', '0.1', 'sine', '660',
-        'vol', '0.15',
-        'fade', 't', '0.01', '0.1', '0.02',
-      ]);
-      this._ackFiles.push(filepath);
-      log.info('Generated subtle ack tone for instant playback');
-    } catch (err) {
-      log.warn('Failed to generate ack tone:', err.message);
+    const ackPhrases = ['Yeah', 'One sec', 'On it', 'Mm hmm', 'Got it', 'Checking'];
+    const voice = 'Alex'; // Male macOS voice — closer to Telnyx male voice
+    let generated = 0;
+
+    for (let i = 0; i < ackPhrases.length; i++) {
+      const filepath = join(tmpdir(), `razor-ack-${i}.aiff`);
+      try {
+        await execFileAsync('say', ['-v', voice, '-o', filepath, ackPhrases[i]]);
+        this._ackFiles.push(filepath);
+        generated++;
+      } catch (err) {
+        log.debug(`Failed to generate verbal ack "${ackPhrases[i]}": ${err.message}`);
+      }
+    }
+
+    if (generated > 0) {
+      log.info(`Generated ${generated} verbal ack sounds (voice: ${voice})`);
+    } else {
+      // Fallback: generate a simple beep tone if say failed
+      log.warn('Verbal acks failed — falling back to beep tone');
+      const filepath = join(tmpdir(), 'razor-ack-tone.wav');
+      try {
+        await execFileAsync('sox', [
+          '-n', filepath,
+          'synth', '0.1', 'sine', '660',
+          'vol', '0.15',
+          'fade', 't', '0.01', '0.1', '0.02',
+        ]);
+        this._ackFiles.push(filepath);
+      } catch (err) {
+        log.warn('Failed to generate fallback beep:', err.message);
+      }
     }
   }
 
@@ -95,14 +141,44 @@ class TtsEngine {
   }
 
   /**
+   * Insert brief pauses into text for TTS clarity.
+   * Adds natural breathing room between numbers and key transitions.
+   */
+  addPauses(text) {
+    if (!text) return text;
+    let result = text;
+
+    // REMOVED: Adding periods after numbers broke TTS flow
+    // e.g., "2 deals closing" became "2. deals closing" which TTS reads wrong
+
+    // Add pause before "Top:" or "First up:"
+    result = result.replace(/\bTop:/g, '... Top:');
+    result = result.replace(/\bFirst up:/g, '... First up:');
+
+    // Add pause after em dashes used as separators
+    result = result.replace(/\s—\s/g, '. ');
+
+    // Collapse any double periods
+    result = result.replace(/\.{2,}\s*/g, '. ');
+
+    return result;
+  }
+
+  /**
    * Synthesize text to audio buffer.
    * @returns {{ buffer: Buffer, format: string } | null}
    */
   async synthesize(text, { pace = 'normal' } = {}) {
+    // Clean text for TTS - remove stray periods after numbers
+    text = text.replace(/(\d)\. ([a-z])/gi, '$1 $2');
+    
     if (!text || text.trim().length === 0) {
       log.warn('Empty text — skipping TTS');
       return null;
     }
+
+    // Insert pauses for clarity before synthesis
+    text = this.addPauses(text);
 
     // Truncate long responses for speed — spoken output should be brief
     const maxChars = config.tts.maxCharsForSpeed || 200;

@@ -26,6 +26,46 @@ async function safe(label, fn) {
 }
 
 // ---------------------------------------------------------------------------
+// TTL cache — reduces redundant API calls for slowly-changing data.
+// ---------------------------------------------------------------------------
+class TtlCache {
+  constructor() {
+    this._store = new Map();
+  }
+
+  get(key) {
+    const entry = this._store.get(key);
+    if (!entry) return undefined;
+    if (Date.now() > entry.expiresAt) {
+      this._store.delete(key);
+      return undefined;
+    }
+    return entry.value;
+  }
+
+  set(key, value, ttlMs) {
+    this._store.set(key, { value, expiresAt: Date.now() + ttlMs });
+  }
+
+  invalidate(key) {
+    this._store.delete(key);
+  }
+
+  clear() {
+    this._store.clear();
+  }
+}
+
+/** Cache TTLs in milliseconds */
+const CACHE_TTL = {
+  contactContext:    5 * 60_000,   // 5 min
+  accountBrief:     5 * 60_000,   // 5 min
+  hotLeads:        10 * 60_000,   // 10 min
+  upcomingSchedule:  2 * 60_000,  // 2 min
+  pipeline:          5 * 60_000,  // 5 min
+};
+
+// ---------------------------------------------------------------------------
 // IntegrationManager
 // ---------------------------------------------------------------------------
 export class IntegrationManager extends EventEmitter {
@@ -37,6 +77,7 @@ export class IntegrationManager extends EventEmitter {
     this.fellow     = null;
     this.brave      = null;
     this._initialized = false;
+    this._cache = new TtlCache();
   }
 
   // ---- Lifecycle ----------------------------------------------------------
@@ -122,6 +163,10 @@ export class IntegrationManager extends EventEmitter {
    * Returns a merged context object.
    */
   async getContactContext(name) {
+    const cacheKey = `contact:${name.toLowerCase()}`;
+    const cached = this._cache.get(cacheKey);
+    if (cached) { log.debug(`Cache hit: ${cacheKey}`); return cached; }
+
     log.info(`Building contact context for "${name}"`);
 
     const [sfContacts, slPeople, emails, meetings] = await Promise.all([
@@ -138,6 +183,7 @@ export class IntegrationManager extends EventEmitter {
       meetingNotes: meetings || [],
     };
 
+    this._cache.set(cacheKey, context, CACHE_TTL.contactContext);
     this._emitAction('getContactContext', 'multi', { name });
     return context;
   }
@@ -177,6 +223,10 @@ export class IntegrationManager extends EventEmitter {
    * Upcoming meetings + tasks for the next N days.
    */
   async getUpcomingSchedule(days = 7) {
+    const cacheKey = `schedule:${days}`;
+    const cached = this._cache.get(cacheKey);
+    if (cached) { log.debug(`Cache hit: ${cacheKey}`); return cached; }
+
     log.info(`Fetching schedule for next ${days} days`);
 
     const [events, tasks, meetings] = await Promise.all([
@@ -193,11 +243,14 @@ export class IntegrationManager extends EventEmitter {
       }),
     ]);
 
-    return {
+    const schedule = {
       calendarEvents:  events   || [],
       salesforceTasks: tasks    || [],
       fellowMeetings:  meetings || [],
     };
+
+    this._cache.set(cacheKey, schedule, CACHE_TTL.upcomingSchedule);
+    return schedule;
   }
 
   /**
@@ -238,9 +291,32 @@ export class IntegrationManager extends EventEmitter {
   }
 
   /**
+   * Hot leads — people with the most email engagement (opens, clicks, replies).
+   */
+  async getHotLeads(opts = {}) {
+    if (!this.salesloft) {
+      log.warn('Salesloft not configured — cannot fetch hot leads');
+      return [];
+    }
+    const cacheKey = 'hotLeads';
+    const cached = this._cache.get(cacheKey);
+    if (cached) { log.debug(`Cache hit: ${cacheKey}`); return cached; }
+
+    const result = await safe('sl.getHotLeads', () => this.salesloft.getHotLeads(opts));
+    const leads = result || [];
+    this._cache.set(cacheKey, leads, CACHE_TTL.hotLeads);
+    this._emitAction('getHotLeads', 'salesloft');
+    return leads;
+  }
+
+  /**
    * Full account brief: Salesforce account + opportunities + Salesloft activities + web research.
    */
   async getFullAccountBrief(accountName) {
+    const cacheKey = `account:${accountName.toLowerCase()}`;
+    const cached = this._cache.get(cacheKey);
+    if (cached) { log.debug(`Cache hit: ${cacheKey}`); return cached; }
+
     log.info(`Building account brief for "${accountName}"`);
 
     // Step 1: Find the account in Salesforce or Salesloft
@@ -271,8 +347,58 @@ export class IntegrationManager extends EventEmitter {
       news:          research || [],
     };
 
+    this._cache.set(cacheKey, brief, CACHE_TTL.accountBrief);
     this._emitAction('getFullAccountBrief', 'multi', { accountName });
     return brief;
+  }
+
+  /**
+   * Look up a specific deal by name.
+   * Searches Opportunity name and Account name in Salesforce.
+   * @param {string} name - Deal or account name to search.
+   * @returns {string} Humanized deal summary for voice response.
+   */
+  async getDealByName(name) {
+    if (!name) return 'Which deal do you want to know about?';
+    if (!this.salesforce) return 'Salesforce not connected.';
+
+    log.info(`Looking up deal: "${name}"`);
+
+    const deal = await safe('sf.getDealByName', () =>
+      this.salesforce.getDealByName(name),
+    );
+
+    if (!deal) return `Couldn't find a deal matching "${name}".`;
+
+    this._emitAction('getDealByName', 'salesforce', { name });
+    return `${deal.name}: ${deal.amount || 'no amount'}, stage: ${deal.stage || 'unknown'}, ` +
+           `closes ${deal.closeDate || 'unknown'}, last activity: ${deal.lastActivity || 'unknown'}.`;
+  }
+
+  /**
+   * Get deals closing within the next N days.
+   * @param {number} [days=7]
+   * @returns {string} Humanized summary for voice response.
+   */
+  async getDealsClosingSoon(days = 7) {
+    if (!this.salesforce) return 'Salesforce not connected.';
+
+    log.info(`Fetching deals closing in next ${days} days`);
+
+    const deals = await safe('sf.getDealsClosingSoon', () =>
+      this.salesforce.getDealsClosingSoon(days),
+    );
+
+    if (!deals || deals.length === 0) {
+      return `No deals closing in the next ${days} days.`;
+    }
+
+    const summary = deals.slice(0, 3).map((d) =>
+      `${d.name}: ${d.amount}, closes ${d.closeDate}`,
+    ).join('. ');
+
+    this._emitAction('getDealsClosingSoon', 'salesforce', { days });
+    return `${deals.length} deal${deals.length === 1 ? '' : 's'} closing soon. ${summary}.`;
   }
 
   /**

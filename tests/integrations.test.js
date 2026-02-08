@@ -46,6 +46,7 @@ process.env.SF_REFRESH_TOKEN      = 'test-sf-rt';
 process.env.SF_INSTANCE_URL       = 'https://test.salesforce.com';
 process.env.GOG_ACCOUNT           = 'test@example.com';
 process.env.FELLOW_API_KEY        = 'test-fellow-key';
+process.env.FELLOW_SUBDOMAIN      = 'test-workspace';
 process.env.BRAVE_SEARCH_API_KEY  = 'test-brave-key';
 
 // ---------------------------------------------------------------------------
@@ -138,6 +139,8 @@ async function run() {
   assert(typeof sf.createTask === 'function', 'sf.createTask exists');
   assert(typeof sf.getUpcomingTasks === 'function', 'sf.getUpcomingTasks exists');
   assert(typeof sf.logActivity === 'function', 'sf.logActivity exists');
+  assert(typeof sf.getDealByName === 'function', 'sf.getDealByName exists');
+  assert(typeof sf.getDealsClosingSoon === 'function', 'sf.getDealsClosingSoon exists');
 
   // ======= GOOGLE ==========================================================
   section('google.js');
@@ -173,7 +176,11 @@ async function run() {
   try { new FellowClient(); } catch { threw = true; }
   assert(threw, 'FellowClient throws without API key');
 
-  const fc = new FellowClient('test-key');
+  threw = false;
+  try { new FellowClient('key-only'); } catch { threw = true; }
+  assert(threw, 'FellowClient throws without subdomain');
+
+  const fc = new FellowClient('test-key', 'test-workspace');
   assert(typeof fc.getMeetings === 'function', 'fc.getMeetings exists');
   assert(typeof fc.getMeetingNotes === 'function', 'fc.getMeetingNotes exists');
   assert(typeof fc.getActionItems === 'function', 'fc.getActionItems exists');
@@ -211,6 +218,8 @@ async function run() {
   assert(typeof mgr.sendFollowUp === 'function', 'mgr.sendFollowUp exists');
   assert(typeof mgr.getFullAccountBrief === 'function', 'mgr.getFullAccountBrief exists');
   assert(typeof mgr.getMeetingPrep === 'function', 'mgr.getMeetingPrep exists');
+  assert(typeof mgr.getDealByName === 'function', 'mgr.getDealByName exists');
+  assert(typeof mgr.getDealsClosingSoon === 'function', 'mgr.getDealsClosingSoon exists');
   assert(typeof mgr.on === 'function', 'mgr inherits EventEmitter.on');
   assert(typeof mgr.emit === 'function', 'mgr inherits EventEmitter.emit');
 
@@ -246,6 +255,24 @@ async function run() {
     assert(followUp === null, 'sendFollowUp returns null when google is null');
   } catch (e) {
     assert(false, `sendFollowUp should not throw: ${e.message}`);
+  }
+
+  let dealResult;
+  try {
+    dealResult = await mgr2.getDealByName('Acme');
+    assert(typeof dealResult === 'string', 'getDealByName returns string when sf is null');
+    assert(dealResult.includes('not connected'), 'getDealByName reports SF not connected');
+  } catch (e) {
+    assert(false, `getDealByName should not throw: ${e.message}`);
+  }
+
+  let closingSoon;
+  try {
+    closingSoon = await mgr2.getDealsClosingSoon(7);
+    assert(typeof closingSoon === 'string', 'getDealsClosingSoon returns string when sf is null');
+    assert(closingSoon.includes('not connected'), 'getDealsClosingSoon reports SF not connected');
+  } catch (e) {
+    assert(false, `getDealsClosingSoon should not throw: ${e.message}`);
   }
 
   // ---- Events ----

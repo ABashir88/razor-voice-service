@@ -122,26 +122,56 @@ export class GoogleClient {
    * @param {number} [max=10]
    */
   async getRecentEmails(query = '', max = 10) {
-    const args = ['gmail', 'search', ...this._base(),
-      '--max', String(max),
-      query,
-    ];
+    try {
+      const args = ['gmail', 'search', ...this._base(),
+        '--max', String(max),
+        query,
+      ];
 
-    const out = await gog(args, 'gmail.search');
-    const threads = JSON.parse(out);
+      const out = await gog(args, 'gmail.search');
+      const threads = JSON.parse(out);
 
-    // gog search --json returns an array of thread objects
-    // Normalise to match the shape the rest of Razor expects
-    if (!Array.isArray(threads)) return [];
-    return threads.map((t) => ({
-      id:       t.id || t.threadId || '',
-      threadId: t.threadId || t.id || '',
-      from:     t.from || t.sender || '',
-      to:       t.to || '',
-      subject:  t.subject || '',
-      date:     t.date || t.lastMessageDate || '',
-      snippet:  t.snippet || '',
-    }));
+      // gog search --json returns an array of thread objects
+      // Normalise to match the shape the rest of Razor expects
+      if (!Array.isArray(threads)) return [];
+      return threads.map((t) => ({
+        id:       t.id || t.threadId || '',
+        threadId: t.threadId || t.id || '',
+        from:     t.from || t.sender || '',
+        to:       t.to || '',
+        subject:  t.subject || '',
+        date:     t.date || t.lastMessageDate || '',
+        snippet:  t.snippet || '',
+      }));
+    } catch (error) {
+      log.error('[Google] getRecentEmails error:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Get new inbox emails from the last 24 hours.
+   * @param {number} [limit=5]
+   */
+  async getNewEmails(limit = 5) {
+    return this.getRecentEmails('is:inbox newer_than:1d', limit);
+  }
+
+  /**
+   * Get unread emails.
+   * @param {number} [limit=10]
+   */
+  async getUnreadEmails(limit = 10) {
+    return this.getRecentEmails('is:unread', limit);
+  }
+
+  /**
+   * Search emails with a custom query.
+   * @param {string} query — Gmail search query
+   * @param {number} [limit=5]
+   */
+  async searchEmails(query, limit = 5) {
+    return this.getRecentEmails(query || '', limit);
   }
 
   /**
@@ -177,20 +207,43 @@ export class GoogleClient {
    * Get upcoming events for the next N days.
    */
   async getUpcomingEvents(days = 7) {
-    const from = new Date().toISOString();
-    const to = new Date(Date.now() + days * 86_400_000).toISOString();
+    try {
+      const from = new Date().toISOString();
+      const to = new Date(Date.now() + days * 86_400_000).toISOString();
 
-    const args = ['calendar', 'events', 'primary', ...this._base(),
-      '--from', from,
-      '--to', to,
-      '--max', '50',
-    ];
+      log.debug(`Fetching calendar from ${from} to ${to}`);
 
-    const out = await gog(args, 'calendar.events');
-    const data = JSON.parse(out);
-    // gog returns { events: [...], nextPageToken? } or a bare array
-    const events = Array.isArray(data) ? data : (data.events || []);
-    return events.map(this._normaliseEvent);
+      const args = ['calendar', 'events', 'primary', ...this._base(),
+        '--from', from,
+        '--to', to,
+        '--max', '50',
+      ];
+
+      const out = await gog(args, 'calendar.events');
+      const data = JSON.parse(out);
+
+      // gog CLI can return multiple shapes:
+      //   - bare array: [ev, ev, ...]
+      //   - nested array: [[ev, ev, ...]]
+      //   - object with items: { items: [...] }
+      //   - object with events: { events: [...] }
+      //   - object with data: { data: [...] }
+      let events;
+      if (Array.isArray(data)) {
+        // Unwrap nested array if gog wraps in [[...]]
+        events = (data.length === 1 && Array.isArray(data[0])) ? data[0] : data;
+      } else {
+        events = data.items || data.events || data.data || [];
+      }
+
+      log.debug(`Raw calendar events: ${events.length} found`);
+
+      const normalised = events.map(this._normaliseEvent);
+      return normalised;
+    } catch (error) {
+      log.error('[Google] getUpcomingEvents error:', error.message);
+      throw error;
+    }
   }
 
   /**
@@ -254,20 +307,25 @@ export class GoogleClient {
   // ---- Calendar helpers ---------------------------------------------------
 
   _normaliseEvent(ev) {
+    // gog CLI uses different property names depending on version/format.
+    // Handle Google Calendar API shape AND gog CLI shape.
+    const startRaw = ev.start?.dateTime || ev.start?.date || ev.startTime || ev.start || null;
+    const endRaw   = ev.end?.dateTime   || ev.end?.date   || ev.endTime   || ev.end   || null;
+
     return {
-      id:          ev.id || '',
-      summary:     ev.summary || ev.title || '',
-      description: ev.description || '',
+      id:          ev.id || ev.eventId || '',
+      summary:     ev.summary || ev.title || ev.subject || '',
+      description: ev.description || ev.notes || '',
       location:    ev.location || '',
-      start:       ev.start?.dateTime || ev.start?.date || ev.start || null,
-      end:         ev.end?.dateTime || ev.end?.date || ev.end || null,
-      attendees:   (ev.attendees || []).map((a) => ({
-        email:  a.email || '',
+      start:       startRaw,
+      end:         endRaw,
+      attendees:   (ev.attendees || ev.participants || []).map((a) => ({
+        email:  a.email || a.emailAddress || '',
         name:   a.displayName || a.name || '',
         status: a.responseStatus || a.status || '',
       })),
-      htmlLink:    ev.htmlLink || '',
-      status:      ev.status || '',
+      htmlLink:    ev.htmlLink || ev.link || '',
+      status:      ev.status || ev.eventStatus || '',
     };
   }
 

@@ -77,6 +77,7 @@ def build_brain_payload(
     user_message: str,
     context: dict[str, Any],
     system_prompt_override: str | None = None,
+    user_profile: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
     Build the complete payload for the OpenClaw brain.
@@ -85,12 +86,16 @@ def build_brain_payload(
         user_message: The current user utterance.
         context: The full context from ConversationContext.get_brain_context().
         system_prompt_override: Optional custom system prompt.
+        user_profile: Optional user profile (name, company, preferences).
 
     Returns:
         Complete payload dict ready to send over WebSocket.
     """
-    return {
+    payload = {
         "system_prompt": system_prompt_override or BRAIN_SYSTEM_PROMPT,
         "user_message": user_message,
         "context": context,
     }
+    if user_profile:
+        payload["user_profile"] = user_profile
+    return payload

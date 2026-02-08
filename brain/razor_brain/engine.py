@@ -106,6 +106,7 @@ class EngineConfig:
     auto_compress_at: int = 30        # compress context after N turns
     response_timeout: float = 60.0
     system_prompt_override: Optional[str] = None
+    user_profile: Optional[dict[str, Any]] = None  # User name, company, preferences
     on_response: Optional[Callable[[BrainResponse], None]] = None
     on_action: Optional[Callable[[dict[str, Any]], None]] = None
     on_error: Optional[Callable[[Exception], None]] = None
@@ -210,6 +211,7 @@ class ConversationEngine:
                 user_message=user_input,
                 context=brain_context,
                 system_prompt_override=self.config.system_prompt_override,
+                user_profile=self.config.user_profile,
             )
 
             # ④ Send to the brain via gateway
