@@ -66,6 +66,18 @@ const DATA_FETCH_ACTIONS = new Set([
   'get_my_cadences', 'my_cadences', 'cadences',
   'activity_stats',
   'get_biggest_deal', 'biggest_deal', 'largest_deal',
+  // Additional Salesforce
+  'get_stale_deals', 'stale_deals', 'deals_gone_dark',
+  'get_deals_closing', 'closing_this_week', 'closing_this_month', 'deals_closing',
+  'get_decision_maker', 'decision_maker', 'who_is_decision_maker',
+  'get_deal_by_name', 'deal_status', 'tell_me_about_deal',
+  'get_sf_tasks', 'salesforce_tasks', 'my_tasks',
+  'get_upcoming_tasks', 'upcoming_tasks',
+  // Google Calendar & Email
+  'get_upcoming_events', 'whats_on_calendar', 'my_calendar', 'meetings_this_week',
+  'find_free_time', 'am_i_free', 'free_slots',
+  'get_unread_emails', 'any_new_emails', 'unread_emails',
+  'search_emails', 'emails_from',
 ]);
 
 async function dispatchAction(action) {
@@ -304,6 +316,140 @@ async function dispatchAction(action) {
           return `Today: ${stats.calls || 0} calls, ${stats.emails || 0} emails.`;
         }
         return "Salesloft not connected.";
+      }
+
+
+      case 'get_stale_deals':
+      case 'stale_deals':
+      case 'deals_gone_dark': {
+        if (integrations.salesforce) {
+          const deals = await integrations.salesforce.getStaleDeals(7);
+          if (!deals?.length) return "No stale deals. Pipeline is active.";
+          const top3 = deals.slice(0, 3).map(d => d.Account?.Name || d.Name?.split(" - ")[0] || "Unknown").join(", ");
+          return `${deals.length} deal${deals.length > 1 ? "s" : ""} with no activity in 7 days: ${top3}.`;
+        }
+        return "Salesforce not connected.";
+      }
+
+      case 'get_deals_closing':
+      case 'closing_this_week':
+      case 'closing_this_month':
+      case 'deals_closing': {
+        if (integrations.salesforce) {
+          const period = params.period || "this_week";
+          const deals = await integrations.salesforce.getDealsClosing(period);
+          if (!deals?.length) return `No deals closing ${period.replace("_", " ")}.`;
+          const total = deals.reduce((sum, d) => sum + (d.Amount || 0), 0);
+          const top3 = deals.slice(0, 3).map(d => d.Account?.Name || d.Name?.split(" - ")[0] || "Unknown").join(", ");
+          return `${deals.length} deal${deals.length > 1 ? "s" : ""} closing ${period.replace("_", " ")}, $${Math.round(total/1000)}k total: ${top3}.`;
+        }
+        return "Salesforce not connected.";
+      }
+
+      case 'get_decision_maker':
+      case 'decision_maker':
+      case 'who_is_decision_maker': {
+        if (integrations.salesforce) {
+          const company = params.company || params.account || params.name;
+          if (!company) return "Which company?";
+          const dm = await integrations.salesforce.getDecisionMaker(company);
+          if (!dm) return `No decision maker found for ${company}.`;
+          return `Decision maker at ${company}: ${dm.Name}, ${dm.Title || "no title"}.`;
+        }
+        return "Salesforce not connected.";
+      }
+
+      case 'get_deal_by_name':
+      case 'deal_status':
+      case 'tell_me_about_deal': {
+        if (integrations.salesforce) {
+          const name = params.name || params.company || params.deal;
+          if (!name) return "Which deal?";
+          const deal = await integrations.salesforce.getDealByName(name);
+          if (!deal) return `No deal found for ${name}.`;
+          const amt = deal.Amount ? `$${Math.round(deal.Amount/1000)}k` : "";
+          const stage = deal.StageName || "unknown stage";
+          return `${deal.Account?.Name || name}: ${amt}, ${stage}, closes ${deal.CloseDate || "TBD"}.`;
+        }
+        return "Salesforce not connected.";
+      }
+
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // GOOGLE — Calendar & Email
+      // ═══════════════════════════════════════════════════════════════════════
+
+      case 'get_upcoming_events':
+      case 'whats_on_calendar':
+      case 'my_calendar':
+      case 'meetings_this_week': {
+        if (integrations.google) {
+          const days = params.days || 1;
+          const events = await integrations.google.getUpcomingEvents(days);
+          if (!events?.length) return days === 1 ? "No meetings today." : `No meetings in the next ${days} days.`;
+          const top3 = events.slice(0, 3).map(e => e.summary || "Untitled").join(", ");
+          return `${events.length} meeting${events.length > 1 ? "s" : ""}: ${top3}.`;
+        }
+        return "Google not connected.";
+      }
+
+      case 'find_free_time':
+      case 'am_i_free':
+      case 'free_slots': {
+        if (integrations.google) {
+          const slots = await integrations.google.findFreeSlots(params.start, params.end, params.duration || 30);
+          if (!slots?.length) return "No free slots found.";
+          return `Found ${slots.length} free slot${slots.length > 1 ? "s" : ""}. First one: ${slots[0].start}.`;
+        }
+        return "Google not connected.";
+      }
+
+      case 'get_unread_emails':
+      case 'check_email':
+      case 'any_new_emails':
+      case 'unread_emails': {
+        if (integrations.google) {
+          const emails = await integrations.google.getUnreadEmails(5);
+          if (!emails?.length) return "No unread emails.";
+          const top3 = emails.slice(0, 3).map(e => e.from?.split("<")[0]?.trim() || "Unknown").join(", ");
+          return `${emails.length} unread email${emails.length > 1 ? "s" : ""} from: ${top3}.`;
+        }
+        return "Google not connected.";
+      }
+
+      case 'search_emails':
+      case 'emails_from': {
+        if (integrations.google) {
+          const query = params.query || params.from || params.person;
+          if (!query) return "Who should I search for?";
+          const emails = await integrations.google.searchEmails(query, 5);
+          if (!emails?.length) return `No emails found for ${query}.`;
+          return `Found ${emails.length} email${emails.length > 1 ? "s" : ""} matching ${query}.`;
+        }
+        return "Google not connected.";
+      }
+
+      case 'get_sf_tasks':
+      case 'salesforce_tasks':
+      case 'my_tasks': {
+        if (integrations.salesforce) {
+          const tasks = await integrations.salesforce.getTasks();
+          if (!tasks?.length) return "No open Salesforce tasks.";
+          const top3 = tasks.slice(0, 3).map(t => t.Subject || "Untitled").join(". ");
+          return `${tasks.length} task${tasks.length > 1 ? "s" : ""}: ${top3}.`;
+        }
+        return "Salesforce not connected.";
+      }
+
+      case 'get_upcoming_tasks':
+      case 'upcoming_tasks': {
+        if (integrations.salesforce) {
+          const tasks = await integrations.salesforce.getUpcomingTasks(7);
+          if (!tasks?.length) return "No upcoming tasks this week.";
+          const top3 = tasks.slice(0, 3).map(t => t.Subject || "Untitled").join(". ");
+          return `${tasks.length} upcoming task${tasks.length > 1 ? "s" : ""}: ${top3}.`;
+        }
+        return "Salesforce not connected.";
       }
 
       case 'get_biggest_deal':
