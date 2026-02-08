@@ -16,6 +16,7 @@ import { getBrainConnector } from './brain/connector.js';
 import { getStateMachine, States } from './state/stateMachine.js';
 import { getConversationContext } from "./context/conversation-context.js";
 import makeLogger from './utils/logger.js';
+import speechLogger from "./utils/speech-logger.js";
 
 const log = makeLogger('Main');
 const sm = getStateMachine();
@@ -864,10 +865,23 @@ async function handleCommand({ text, source }) {
       }
 
       // Clean before TTS — strip artifacts, skip placeholder responses
+      // Clean and naturalize for TTS
+      const originalText = speakText;
       speakText = cleanForTTS(speakText);
+      speakText = speechLogger.makeNatural(speakText);
+      
+      // Log TTS transformation
+      speechLogger.logTTSInput(originalText, speakText, "brain response");
+      
+      // Check for naturalness issues
+      const issues = speechLogger.analyzeNaturalness(speakText);
+      if (issues.length > 0) {
+        speechLogger.logNaturalnessIssues(speakText, issues);
+      }
+      
       if (!speakText) {
-        log.info('Skipping TTS — empty or placeholder response after cleaning');
-        sm.transition(States.LISTENING, 'empty_response');
+        log.info("Skipping TTS — empty or placeholder response after cleaning");
+        sm.transition(States.LISTENING, "empty_response");
         return;
       }
 

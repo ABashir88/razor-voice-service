@@ -35,7 +35,6 @@ import TtsEngine from '../tts/tts-engine.js';
 import InterruptionHandler from './interruption-handler.js';
 import { attention } from './attention.js';
 import { followUpMode } from './follow-up-mode.js';
-import { conversationContext } from '../context/conversation-context.js';
 import { ackPlayer } from '../audio/ack-player.js';
 import { getStateMachine, States } from '../state/stateMachine.js';
 import { userState } from '../state/user-state.js';
