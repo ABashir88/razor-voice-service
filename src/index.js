@@ -172,12 +172,11 @@ async function dispatchAction(action) {
       }
 
       case 'get_pipeline':
+      case 'pipeline':
       case 'check_pipeline':
-        if (false && integrations.salesloft) {
-          return await integrations.salesloft.getPipeline(params);
-        }
         if (integrations.salesforce) {
-          return await integrations.salesforce.queryOpportunities(params);
+          const pipeline = await integrations.salesforce.getPipeline();
+          return pipeline.text;
         }
         log.warn('No CRM available for pipeline check');
         return null;
@@ -315,7 +314,8 @@ async function dispatchAction(action) {
           if (!opps?.length) return "No open deals found.";
           const deal = opps[0];
           const amt = deal.Amount ? `$${(deal.Amount/1000).toFixed(0)}k` : "";
-          return `Biggest deal: ${deal.Name} ${amt}.`;
+          const name = (deal.Name || "").split(" - ")[0] || deal.Account?.Name || "Unknown";
+          return `Your biggest open deal is ${name} at ${amt || "unknown amount"}.`;
         }
         return "Salesforce not connected.";
       }
