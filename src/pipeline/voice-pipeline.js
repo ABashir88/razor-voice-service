@@ -113,7 +113,17 @@ class VoicePipeline extends EventEmitter {
       actionsTriggered: 0,
       actionsFailed: 0,
       fellbackToPattern: 0,
+      frankensteinCount: 0,
+      deadCodeAckCount: 0,
+      patternHits: 0,
+      cacheHits: 0,
+      fillerPlayed: 0,
+      fillerMissed: 0,
     };
+
+    // ── Integration health tracking (Update 8) ──
+    // Tracks per-integration success/fail/timing — logged on shutdown
+    this._integrationHealth = {};  // { serviceName: { success, fail, totalMs, calls } }
 
     // ── Bridge state machine transitions to pipeline events ──
     // so index.js and other modules can subscribe via either interface
@@ -381,6 +391,50 @@ class VoicePipeline extends EventEmitter {
       log.info(`[Session]   Overall: ${grade} (${avg}/100 avg over ${scores.length} turns)`);
       log.info(`[Session]   Distribution: A=${dist.A} B=${dist.B} C=${dist.C} D=${dist.D} F=${dist.F}`);
       log.info(`[Session]   Rhythm: user avg ${avgUser}ms, razor avg ${avgRazor}ms`);
+      log.info('[Session] ─────────────────────────');
+
+      // ── [Session] WEEK 1 SCORECARD ──
+      const s2 = this._sessionStats;
+      const totalTurns = scores.length;
+      const singleVoice = s2.frankensteinCount === 0;
+      const noSilent = s2.silentResponses === 0;
+      const avgWait = totalTurns > 0 ? Math.round(s2.totalResponseMs / totalTurns) : 0;
+      const avgWaitOk = avgWait < 2000;
+      const fillerTotal = s2.fillerPlayed + s2.fillerMissed;
+      const fillerCoverage = fillerTotal > 0 ? Math.round((s2.fillerPlayed / fillerTotal) * 100) : 100;
+      const fillerOk = fillerCoverage >= 90;
+      const personalityAvg = avg; // reuse from grade card
+      const personalityOk = personalityAvg >= 70;
+      const talkRatio = r.razorSpeechMs.length > 0 && avgRazor > 0 ? (avgUser / avgRazor) : 0;
+      const talkRatioOk = talkRatio > 0 && talkRatio < 2.0;
+      const noRetries = s2.actionsFailed === 0;
+
+      const checks = [singleVoice, noSilent, avgWaitOk, fillerOk, personalityOk, talkRatioOk, noRetries];
+      const passedCount = checks.filter(Boolean).length;
+      const verdict = passedCount >= 6 ? 'PASS' : passedCount >= 4 ? 'MARGINAL' : 'FAIL';
+
+      log.info('[Session] ── WEEK 1 SCORECARD ──');
+      log.info(`[Session]   ${singleVoice ? '✓' : '✗'} Single voice (frankenstein: ${s2.frankensteinCount})`);
+      log.info(`[Session]   ${noSilent ? '✓' : '✗'} No silent turns (silent: ${s2.silentResponses})`);
+      log.info(`[Session]   ${avgWaitOk ? '✓' : '✗'} Avg wait <2s (actual: ${avgWait}ms)`);
+      log.info(`[Session]   ${fillerOk ? '✓' : '✗'} Filler coverage ≥90% (actual: ${fillerCoverage}%)`);
+      log.info(`[Session]   ${personalityOk ? '✓' : '✗'} Personality avg ≥70 (actual: ${personalityAvg})`);
+      log.info(`[Session]   ${talkRatioOk ? '✓' : '✗'} Talk ratio <2.0x (actual: ${talkRatio.toFixed(2)}x)`);
+      log.info(`[Session]   ${noRetries ? '✓' : '✗'} No retries (failures: ${s2.actionsFailed})`);
+      log.info(`[Session]   Cache hits: ${s2.cacheHits} | Pattern hits: ${s2.patternHits}`);
+      log.info(`[Session]   WEEK 1 VERDICT: ${verdict} (${passedCount}/7)`);
+      log.info('[Session] ─────────────────────────');
+    }
+
+    // ── [Session] Integration Health Summary ──
+    const healthEntries = Object.entries(this._integrationHealth);
+    if (healthEntries.length > 0) {
+      log.info('[Session] ── INTEGRATION HEALTH ──');
+      for (const [svc, h] of healthEntries) {
+        const avgMs = h.calls > 0 ? Math.round(h.totalMs / h.calls) : 0;
+        const rate = h.calls > 0 ? Math.round((h.success / h.calls) * 100) : 0;
+        log.info(`[Session]   ${svc}: ${h.success}✓ ${h.fail}✗ (${rate}% success, avg ${avgMs}ms)`);
+      }
       log.info('[Session] ─────────────────────────');
     }
 
@@ -651,14 +705,17 @@ class VoicePipeline extends EventEmitter {
 
     if (!fillerPlayer.ready) {
       log.debug('Filler player not ready — skipping filler');
+      this._sessionStats.fillerMissed++;
       return;
     }
 
     const proc = fillerPlayer.play(category);
     this._ackPlayedAt = Date.now();
+    this._sessionStats.fillerPlayed++;
     if (this._turn) {
       this._turn.fillerStartMs = Date.now();
       this._turn.fillerText = category;
+      this._turn.audioSources.push('filler_armon'); // Telnyx armon voice
     }
     // Track when filler actually finishes (natural end or killed by 1.5s timeout)
     if (proc) {
@@ -670,6 +727,17 @@ class VoicePipeline extends EventEmitter {
     }
     if (this._userStoppedAt) {
       log.info(`[Latency] Filler started at ${this._ackPlayedAt} — ${this._ackPlayedAt - this._userStoppedAt}ms after user stopped`);
+    }
+  }
+
+  // ── Dead-code trap: playAck() was removed in v9 ──
+  // If anything calls this, it means dead code is still executing.
+  // This should never fire — if it does, we have a code path that wasn't cleaned up.
+  playAck() {
+    log.error('[Voice] DEAD CODE: playAck() called — this method was removed in v9. Fillers replaced acks.');
+    if (this._turn) {
+      this._turn.deadCodeAckCalled = true;
+      this._turn.flags.push('DEAD_CODE_ACK');
     }
   }
 
@@ -714,6 +782,12 @@ class VoicePipeline extends EventEmitter {
       xpEmoji: '',
       xpDeductions: [],
       flags: [],
+      // ── v9 telemetry ──
+      intentSource: null,        // 'cache' | 'llm' | 'pattern'
+      priorityBreakdown: null,   // { calendarMs, actionItemsMs, hotLeadsMs, totalMs }
+      frankenstein: false,       // true if non-armon audio source detected
+      deadCodeAckCalled: false,  // true if dead playAck() trap was triggered
+      audioSources: [],          // ['telnyx_armon', 'macos_say', etc.]
     };
     // Reset saved STT values
     this._lastSttConfidence = null;
@@ -726,6 +800,17 @@ class VoicePipeline extends EventEmitter {
   _endTurn() {
     if (!this._turn) return;
     const t = this._turn;
+
+    // ── Voice consistency audit ──
+    // Check audio sources used this turn for Frankenstein detection
+    if (t.audioSources.length > 0) {
+      const nonArmon = t.audioSources.filter(s => s !== 'telnyx_armon' && s !== 'filler_armon');
+      if (nonArmon.length > 0) {
+        t.frankenstein = true;
+        t.flags.push('FRANKENSTEIN');
+        log.warn(`[Voice] FRANKENSTEIN detected — non-armon sources: ${nonArmon.join(', ')}`);
+      }
+    }
 
     // Personality audit
     const pa = auditPersonality(t.spokenText);
@@ -743,6 +828,12 @@ class VoicePipeline extends EventEmitter {
 
     // Track for session summary
     this._sessionXPScores.push(t.xpScore);
+
+    // Track v9 session stats
+    if (t.frankenstein) this._sessionStats.frankensteinCount++;
+    if (t.deadCodeAckCalled) this._sessionStats.deadCodeAckCount++;
+    if (t.intentSource === 'pattern') this._sessionStats.patternHits++;
+    if (t.cacheHit) this._sessionStats.cacheHits++;
 
     // Log consolidated turn block
     logTurnBlock(t, log);
@@ -798,6 +889,23 @@ class VoicePipeline extends EventEmitter {
     log.info(`[Rhythm] Avg user: ${Math.round(avgUser)}ms | Avg Razor: ${Math.round(avgRazor)}ms | Talk ratio: ${ratio} | Turn ${this._turnNumber}`);
   }
 
+  /**
+   * Record an integration call for health tracking.
+   * Called from index.js after each dispatch.
+   * @param {string} service — e.g. 'google', 'salesforce', 'fellow', 'salesloft'
+   * @param {boolean} success
+   * @param {number} ms — duration in milliseconds
+   */
+  recordIntegrationCall(service, success, ms) {
+    if (!this._integrationHealth[service]) {
+      this._integrationHealth[service] = { success: 0, fail: 0, totalMs: 0, calls: 0 };
+    }
+    const h = this._integrationHealth[service];
+    h.calls++;
+    if (success) h.success++; else h.fail++;
+    h.totalMs += ms;
+  }
+
   // ── Speak text (called by external command handler) ──
   // Respects user availability state: if user is IN_CALL or DND and Razor
   // is initiating proactively, the speech is queued instead of spoken.
@@ -838,13 +946,18 @@ class VoicePipeline extends EventEmitter {
     if (this._userStoppedAt) {
       const now = Date.now();
       const totalWait = now - this._userStoppedAt;
-      const ackDelay = this._ackPlayedAt > this._userStoppedAt ? this._ackPlayedAt - this._userStoppedAt : -1;
+      const fillerDelay = this._ackPlayedAt > this._userStoppedAt ? this._ackPlayedAt - this._userStoppedAt : -1;
       log.info(`[Latency] TTS started at ${now} — ${totalWait}ms total wait`);
-      log.info(`[Humanness] Total wait: ${totalWait}ms | Ack: ${ackDelay}ms | TTS: ${totalWait}ms`);
+      log.info(`[Humanness] Total wait: ${totalWait}ms | Filler: ${fillerDelay}ms | TTS: ${totalWait}ms`);
     }
 
     try {
       const result = await this.tts.synthesize(text, { pace });
+      // Track TTS audio source for voice consistency
+      if (this._turn && result) {
+        const src = result.provider === 'macos_say' ? 'macos_say' : 'telnyx_armon';
+        this._turn.audioSources.push(src);
+      }
       if (!result) {
         this.sm.transition(States.LISTENING, 'tts_empty');
         return;

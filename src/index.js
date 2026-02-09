@@ -90,11 +90,39 @@ const DATA_FETCH_ACTIONS = new Set([
   'search_emails', 'emails_from',
 ]);
 
+// Map action names to their integration service for observability
+const ACTION_SERVICE_MAP = {
+  get_pipeline: 'salesforce', get_opportunities: 'salesforce', get_stale_deals: 'salesforce',
+  get_deals_closing: 'salesforce', get_sf_tasks: 'salesforce', search_contact: 'salesforce',
+  lookup_contact: 'salesforce', get_decision_maker: 'salesforce', get_deal_by_name: 'salesforce',
+  deal_status: 'salesforce', get_biggest_deal: 'salesforce', get_upcoming_tasks: 'salesforce',
+  update_opportunity: 'salesforce', update_crm: 'salesforce', create_task: 'salesforce',
+  salesforce_tasks: 'salesforce', my_tasks: 'salesforce',
+  get_action_items: 'fellow', get_today_meetings: 'fellow', last_meeting: 'fellow',
+  get_recordings: 'fellow', get_transcript: 'fellow', get_talk_ratio: 'fellow',
+  get_last_meeting: 'fellow', coach_me: 'fellow', get_coaching: 'fellow',
+  get_overdue_items: 'fellow', search_meetings: 'fellow', get_meeting_recap: 'fellow',
+  get_recent_notes: 'fellow', get_meeting_actions: 'fellow',
+  check_calendar: 'google', find_free_time: 'google', get_unread_emails: 'google',
+  check_email: 'google', get_upcoming_events: 'google', search_emails: 'google',
+  get_schedule: 'google', get_calendar: 'google', schedule_meeting: 'google',
+  create_event: 'google',
+  get_hot_leads: 'salesloft', get_email_opens: 'salesloft', get_email_clicks: 'salesloft',
+  get_email_replies: 'salesloft', get_activity_stats: 'salesloft', get_my_cadences: 'salesloft',
+  get_replies: 'salesloft',
+  research: 'brave', search_web: 'brave', search: 'brave',
+  get_priorities: 'composite', morning_briefing: 'composite',
+  daily_briefing: 'composite', give_briefing: 'composite',
+};
+
 async function dispatchAction(action) {
   const type = action.action || action.type;
   const params = action.params || {};
 
-  log.info(`Dispatching action: ${type}`);
+  const service = ACTION_SERVICE_MAP[type] || 'unknown';
+  log.info(`[Dispatch] ${type} → ${service}`);
+  const dispatchStart = Date.now();
+  let _dispatchFailed = false;
 
   try {
     switch (type) {
@@ -107,8 +135,12 @@ async function dispatchAction(action) {
       }
 
       case 'get_priorities': {
-        const summary = await priorityEngine.getPriorities();
-        return summary;
+        const result = await priorityEngine.getPriorities();
+        // Capture priority timing breakdown on turn
+        if (pipeline._turn && result.timing) {
+          pipeline._turn.priorityBreakdown = result.timing;
+        }
+        return result.text || result;
       }
 
       case 'search_contact':
@@ -498,10 +530,15 @@ async function dispatchAction(action) {
         if (integrations.fellow) {
           const limit = params.limit || 5;
           const status = params.status || 'open';
+          log.info(`[ActionItems] Fetching: limit=${limit}, status=${status}`);
           const items = await integrations.fellow.getActionItems({ limit, status, assignee: 'me' });
-          if (!items?.length) return status === 'overdue' ? "Nothing overdue. You're all caught up." : "No open action items right now.";
+          if (!items?.length) {
+            log.info(`[ActionItems] Result: 0 items returned`);
+            return status === 'overdue' ? "Nothing overdue. You're all caught up." : "No open action items right now.";
+          }
           const totalItems = await integrations.fellow.getMyActionItems();
           const totalCount = totalItems?.length || items.length;
+          log.info(`[ActionItems] Result: ${items.length} returned of ${totalCount} total (requested ${limit})`);
           return _formatActionItems(items, totalCount);
         }
         return "Fellow not connected.";
@@ -634,8 +671,15 @@ async function dispatchAction(action) {
         return { text: "I can't do that yet." };
     }
   } catch (err) {
+    _dispatchFailed = true;
     log.error(`Action ${type} failed:`, err.message);
     return null;
+  } finally {
+    const elapsedMs = Date.now() - dispatchStart;
+    log.info(`[Dispatch] ${type} → ${service} (${elapsedMs}ms, ${_dispatchFailed ? '✗' : '✓'})`);
+    if (pipeline?.recordIntegrationCall) {
+      pipeline.recordIntegrationCall(service, !_dispatchFailed, elapsedMs);
+    }
   }
 }
 
@@ -861,6 +905,9 @@ async function handleCommand({ text, source }) {
         pipeline._turn.brainRespondedAt = Date.now();
         pipeline._turn.brainMs = pipeline._turn.brainRequestedAt ? Date.now() - pipeline._turn.brainRequestedAt : 0;
         pipeline._turn.intent = response.intent || 'unknown';
+        // v9: capture intent source from brain (cache/llm/pattern)
+        pipeline._turn.intentSource = response.intent_source || 'llm';
+        if (response.intent_source === 'pattern') pipeline._sessionStats.fellbackToPattern++;
       }
 
       let speakText = extractSpeakableText(response.text);
@@ -898,7 +945,12 @@ async function handleCommand({ text, source }) {
               if (pipeline._turn) pipeline._turn.cacheHit = true;
               return { action: a.action, params: a.params, result: cached };
             }
+            const dispatchStart = Date.now();
             const result = await dispatchAction(a);
+            const dispatchMs = Date.now() - dispatchStart;
+            // Track integration health
+            const svc = _actionToService(a.action);
+            if (svc) pipeline.recordIntegrationCall(svc, result != null, dispatchMs);
             // Cache the result for future queries
             if (result != null) queryCache.set(a.action, result, undefined, a.params);
             return { action: a.action, params: a.params, result };
@@ -909,7 +961,7 @@ async function handleCommand({ text, source }) {
           pipeline._turn.dataFetchEndedAt = Date.now();
           pipeline._turn.dataFetchMs = pipeline._turn.dataFetchStartedAt ? Date.now() - pipeline._turn.dataFetchStartedAt : 0;
           for (const r of results) {
-            pipeline._turn.actions.push({ action: r.action, succeeded: r.result != null });
+            pipeline._turn.actions.push({ action: r.action, params: r.params, succeeded: r.result != null });
           }
         }
 
@@ -1092,6 +1144,16 @@ function truncateForTTS(text, maxChars = 120) {
   const cut = text.slice(0, maxChars);
   const lastSpace = cut.lastIndexOf(' ');
   return (lastSpace > 20 ? cut.slice(0, lastSpace) : cut) + '.';
+}
+
+// ── Map action name to integration service for health tracking ──
+function _actionToService(action) {
+  if (/calendar|schedule|event|free|email|unread|search_email/i.test(action)) return 'google';
+  if (/pipeline|deal|stale|closing|decision|sf_task|upcoming_task|opportunity|salesforce/i.test(action)) return 'salesforce';
+  if (/action_item|meeting|recording|transcript|talk_ratio|coaching|fellow|notes/i.test(action)) return 'fellow';
+  if (/hot_lead|email_open|email_click|repl|cadence|activity_stat|salesloft/i.test(action)) return 'salesloft';
+  if (/research|search_web|brave/i.test(action)) return 'brave';
+  return null;
 }
 
 // ── Format action items into voice-friendly list ──

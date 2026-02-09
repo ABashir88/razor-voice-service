@@ -86,6 +86,17 @@ export function computeExperienceScore(t) {
     if (streamLatency < 1200) { score += 5; deductions.push('fast_stream(+5)'); }
   }
 
+  // ── V9 FACTORS ──
+  if (t.frankenstein) { score -= 20; deductions.push('FRANKENSTEIN(-20)'); }
+  if (t.deadCodeAckCalled) { score -= 15; deductions.push('DEAD_CODE_ACK(-15)'); }
+  if (t.intentSource === 'pattern') { score += 5; deductions.push('pattern_hit(+5)'); }
+  if (t.priorityBreakdown) {
+    const pb = t.priorityBreakdown;
+    const failedSubs = [pb.calendarMs, pb.actionItemsMs, pb.hotLeadsMs].filter(ms => ms === -1).length;
+    if (failedSubs > 0) { score -= 5 * failedSubs; deductions.push(`priority_partial(${failedSubs}x-5)`); }
+    if (pb.totalMs > 0 && pb.totalMs < 3000) { score += 5; deductions.push('fast_priority(+5)'); }
+  }
+
   const clamped = Math.max(0, Math.min(100, score));
   const grade = clamped >= 90 ? 'A' : clamped >= 75 ? 'B' : clamped >= 60 ? 'C' : clamped >= 40 ? 'D' : 'F';
   const emoji = clamped >= 90 ? '🌟' : clamped >= 75 ? '🟢' : clamped >= 60 ? '🟡' : clamped >= 40 ? '🟠' : '🔴';
@@ -148,6 +159,15 @@ export function logTurnBlock(t, logger) {
 
   lines.push(`[Turn] ═══ TURN ${t.number} ═══════════════════════════════════════`);
 
+  // Silent turn banner — must be unmissable (Week 1 KPI #1)
+  // Only check spokenText — brainText is "." for pattern-matched turns (expected, not silent)
+  const _isSilent = !t.spokenText || t.spokenText.trim() === '' || t.spokenText.trim() === '.';
+  if (_isSilent) {
+    lines.push('[Turn] ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓');
+    lines.push('[Turn] ┃  🔇 SILENT TURN — No spoken output    ┃');
+    lines.push('[Turn] ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛');
+  }
+
   // 1. What the user said
   const sttFix = t.sttCorrected ? ` (STT fixed: "${t.sttOriginal}" → "${t.sttCorrected}")` : '';
   lines.push(`[Turn] 🎤 User: "${t.command}" (${t.userSpeechMs}ms speech, confidence ${t.sttConfidence}%)${sttFix}`);
@@ -158,10 +178,29 @@ export function logTurnBlock(t, logger) {
 
   // 3. Brain + Action
   const cacheTag = t.cacheHit ? '♻️ CACHE' : t.prefetched ? '⚡ PREFETCH' : '🌐 LIVE';
+  const intentTag = t.intentSource === 'pattern' ? '⚡ PATTERN' : t.intentSource === 'cache' ? '♻️ CACHE' : '🧠 LLM';
   const actionStr = t.actions.length > 0
-    ? t.actions.map(a => `${a.action}(${a.succeeded ? '✓' : '✗'})`).join(', ')
+    ? t.actions.map(a => {
+        const p = a.params && Object.keys(a.params).length > 0
+          ? '(' + Object.entries(a.params).map(([k, v]) => `${k}=${v}`).join(', ') + ')'
+          : '';
+        return `${a.action}${p}(${a.succeeded ? '✓' : '✗'})`;
+      }).join(', ')
     : 'no_action';
-  lines.push(`[Turn] 🧠 Brain: ${t.intent} → ${actionStr} [${cacheTag}] (brain: ${t.brainMs}ms, data: ${t.dataFetchMs}ms)`);
+  lines.push(`[Turn] 🧠 Brain: ${t.intent} → ${actionStr} [${intentTag}] [${cacheTag}] (brain: ${t.brainMs}ms, data: ${t.dataFetchMs}ms)`);
+
+  // 3a. Pattern match detail
+  if (t.intentSource === 'pattern') {
+    const _transcript = (t.userText || t.rawCommand || t.command || '').slice(0, 50);
+    const _action = (t.actions.length > 0 && t.actions[0].action) || t.intent || 'unknown';
+    lines.push(`[Turn] ⚡ Pattern: "${_transcript}" matched → ${_action} (skipped LLM, saved ~2500ms)`);
+  }
+
+  // 3b. Priority breakdown (if this was a get_priorities action)
+  if (t.priorityBreakdown) {
+    const pb = t.priorityBreakdown;
+    lines.push(`[Priority] 📊 cal: ${pb.calendarMs}ms | items: ${pb.actionItemsMs}ms | leads: ${pb.hotLeadsMs}ms | total: ${pb.totalMs}ms`);
+  }
 
   // 4. What Razor actually said
   const wordCount = (t.spokenText || '').split(/\s+/).filter(Boolean).length;

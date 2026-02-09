@@ -116,65 +116,65 @@ _ACTION_PATTERNS: list[tuple[_re.Pattern, dict]] = [
     # ═══════════════════════════════════════════════════════════════════
     # SALESFORCE
     # ═══════════════════════════════════════════════════════════════════
-    (_re.compile(r"(pipeline|how much pipeline|my pipeline|quota)", _re.I),
+    (_re.compile(r"(pipeline|how much pipeline|my pipeline|quota)", _re.I),
      {"action": "get_pipeline", "params": {}}),
-    (_re.compile(r"(biggest deal|largest deal|biggest opportunity)", _re.I),
+    (_re.compile(r"(biggest deal|largest deal|biggest opportunity)", _re.I),
      {"action": "get_biggest_deal", "params": {}}),
-    (_re.compile(r"(stale deals?|deals? gone dark|neglected deals?|deals? at risk)", _re.I),
+    (_re.compile(r"(stale deals?|deals? gone dark|neglected deals?|deals? at risk)", _re.I),
      {"action": "get_stale_deals", "params": {}}),
-    (_re.compile(r"(closing this week|deals? closing this week|what.?s closing soon)", _re.I),
+    (_re.compile(r"(closing this week|deals? closing this week|what.?s closing soon)", _re.I),
      {"action": "get_deals_closing", "params": {"period": "this_week"}}),
-    (_re.compile(r"(closing this month|deals? closing this month)", _re.I),
+    (_re.compile(r"(closing this month|deals? closing this month)", _re.I),
      {"action": "get_deals_closing", "params": {"period": "this_month"}}),
-    (_re.compile(r"(my tasks?|salesforce tasks?|sf tasks?)", _re.I),
+    (_re.compile(r"(salesforce tasks?|sf tasks?|my sf tasks?)", _re.I),
      {"action": "get_sf_tasks", "params": {}}),
-    (_re.compile(r"(upcoming tasks?|tasks? this week)", _re.I),
+    (_re.compile(r"(upcoming tasks?|tasks? this week)", _re.I),
      {"action": "get_upcoming_tasks", "params": {}}),
-    (_re.compile(r"decision maker", _re.I),
+    (_re.compile(r"decision maker", _re.I),
      {"action": "get_decision_maker", "params": {}}),
 
     # ═══════════════════════════════════════════════════════════════════
     # SALESLOFT
     # ═══════════════════════════════════════════════════════════════════
-    (_re.compile(r"(hot leads?|who.?s engaged|any hot prospects?|buying signals?)", _re.I),
+    (_re.compile(r"(hot leads?|who.?s (?:engaged|hot)|any hot prospects?|buying signals?|warm leads?|engaged leads?)", _re.I),
      {"action": "get_hot_leads", "params": {}}),
-    (_re.compile(r"(who opened|email opens?|who opened my emails?)", _re.I),
+    (_re.compile(r"(who opened|email opens?|who opened my emails?)", _re.I),
      {"action": "get_email_opens", "params": {}}),
-    (_re.compile(r"(who clicked|email clicks?|who clicked my emails?|any clicks?)", _re.I),
+    (_re.compile(r"(who clicked|email clicks?|who clicked my emails?|any clicks?|clicks?\b|click (?:activity|stats?))", _re.I),
      {"action": "get_email_clicks", "params": {}}),
-    (_re.compile(r"(any replies?|who replied|replies)", _re.I),
+    (_re.compile(r"(any replies?|who replied|repli(?:es|ed)|email replies?)", _re.I),
      {"action": "get_replies", "params": {}}),
-    (_re.compile(r"(activity stats?|my numbers?|how many calls|my activity)", _re.I),
+    (_re.compile(r"(activity stats?|my (?:numbers?|stats?|activity)|how many calls|call stats?)", _re.I),
      {"action": "get_activity_stats", "params": {}}),
-    (_re.compile(r"(my cadences?|active cadences?)", _re.I),
+    (_re.compile(r"(my cadences?|active cadences?)", _re.I),
      {"action": "get_my_cadences", "params": {}}),
 
     # ═══════════════════════════════════════════════════════════════════
     # FELLOW
     # ═══════════════════════════════════════════════════════════════════
-    (_re.compile(r"(my action items?|action items?|what are my action items?|to.?dos? from meetings?)", _re.I),
+    (_re.compile(r"(my action items?|action items?|what are my action items?|to.?dos? from meetings?)", _re.I),
      {"action": "get_action_items", "params": {}}),
-    (_re.compile(r"(overdue items?|overdue tasks?|any overdue)", _re.I),
+    (_re.compile(r"(overdue items?|overdue tasks?|any overdue)", _re.I),
      {"action": "get_overdue_items", "params": {}}),
-    (_re.compile(r"(last meeting|how did my last call go|last meeting summary|last call)", _re.I),
+    (_re.compile(r"(last meeting|how did my last call go|last meeting summary|last call)", _re.I),
      {"action": "last_meeting", "params": {}}),
-    (_re.compile(r"(today.?s meetings?|meetings? today|what meetings? do i have)", _re.I),
+    (_re.compile(r"(today.?s meetings?|meetings? today|what meetings? do i have)", _re.I),
      {"action": "get_today_meetings", "params": {}}),
-    (_re.compile(r"(recent recordings?|recordings? this week|any recordings?)", _re.I),
+    (_re.compile(r"(recent recordings?|recordings? this week|any recordings?)", _re.I),
      {"action": "get_recordings", "params": {}}),
-    (_re.compile(r"(transcript|show transcript|last transcript)", _re.I),
+    (_re.compile(r"(transcript|show transcript|last transcript)", _re.I),
      {"action": "get_transcript", "params": {}}),
-    (_re.compile(r"(talk ratio|how much did i talk)", _re.I),
+    (_re.compile(r"(talk ratio|how much did i talk)", _re.I),
      {"action": "get_talk_ratio", "params": {}}),
 
     # ═══════════════════════════════════════════════════════════════════
     # GOOGLE
     # ═══════════════════════════════════════════════════════════════════
-    (_re.compile(r"(what.?s on my calendar|calendar|my schedule|meetings? this week)", _re.I),
+    (_re.compile(r"(what.?s on my calendar|calendar|my schedule|meetings? this week)", _re.I),
      {"action": "check_calendar", "params": {"days": 1}}),
-    (_re.compile(r"(check my email|any new emails?|unread emails?|check email)", _re.I),
+    (_re.compile(r"(check my email|any new emails?|unread emails?|check email)", _re.I),
      {"action": "get_unread_emails", "params": {}}),
-    (_re.compile(r"(free slots?|am i free|when am i free)", _re.I),
+    (_re.compile(r"(free slots?|open slots?|available slots?|am i free|when am i free|availability|what.?s available)", _re.I),
      {"action": "find_free_time", "params": {}}),
 
     # ═══════════════════════════════════════════════════════════════════
@@ -182,13 +182,13 @@ _ACTION_PATTERNS: list[tuple[_re.Pattern, dict]] = [
     # ═══════════════════════════════════════════════════════════════════
     (_re.compile(r"(briefing|brief me|morning briefing|daily briefing|catch me up|what.?s happening)", _re.I),
      {"action": "morning_briefing", "params": {}}),
-    (_re.compile(r"remind me", _re.I),
+    (_re.compile(r"remind me", _re.I),
      {"action": "create_reminder", "params": {}}),
-    (_re.compile(r"(log.*(call|meeting|activity)|record.*(call|meeting))", _re.I),
+    (_re.compile(r"(log.*(call|meeting|activity)|record.*(call|meeting))", _re.I),
      {"action": "log_call", "params": {}}),
-    (_re.compile(r"(prep me|prepare.*(for|me)|meeting prep)", _re.I),
+    (_re.compile(r"(prep me|prepare.*(for|me)|meeting prep)", _re.I),
      {"action": "meeting_prep", "params": {}}),
-    (_re.compile(r"(search.*(web|for)|research)", _re.I),
+    (_re.compile(r"(search.*(web|for)|research)", _re.I),
      {"action": "research", "params": {"query": ""}}),
 
     # ═══════════════════════════════════════════════════════════════════
@@ -208,7 +208,7 @@ _ACTION_PATTERNS: list[tuple[_re.Pattern, dict]] = [
     # ═══════════════════════════════════════════════════════════════════
     (_re.compile(r"talk(?:ing)?\s*ratio|how much (?:did I|am I) talk", _re.I),
      {"action": "get_talk_ratio", "params": {}}),
-    (_re.compile(r"action items?|to.?dos?|(?:my |are my )?tasks(?:\s|$|\?|\.)", _re.I),
+    (_re.compile(r"action items?|to.?dos?|(?:my |are my )?tasks?\b|top \d+ (?:action items?|tasks?)", _re.I),
      {"action": "get_action_items", "params": {}}),
     (_re.compile(r"last (?:meeting|call)|how (?:did|was) my (?:last )?call", _re.I),
      {"action": "last_meeting", "params": {}}),
@@ -251,6 +251,7 @@ _CONTACT_PATTERN = _re.compile(
 def _detect_actions_from_query(text: str) -> list[dict]:
     """Detect actions from user query as fallback when brain doesn't emit them."""
     lower = text.lower()
+    logger.debug("[Pattern] Testing %d patterns against: '%s'", len(_ACTION_PATTERNS), lower[:80])
 
     for pattern, action_template in _ACTION_PATTERNS:
         if pattern.search(lower):
@@ -258,6 +259,10 @@ def _detect_actions_from_query(text: str) -> list[dict]:
             # Fill in query param for research
             if action["action"] == "research":
                 action["params"] = {"query": text}
+            logger.info(
+                "[Pattern] MATCH: '%s' → %s (pattern: %s)",
+                lower[:60], action["action"], pattern.pattern[:40],
+            )
             return [action]
 
     # Contact lookup (broad — check last)
@@ -290,6 +295,7 @@ class BrainResponse(BaseModel):
     actions: list[dict[str, Any]] = Field(default_factory=list)
     state: str = "listening"
     latency_ms: float = 0.0
+    intent_source: str = "llm"  # "cache" | "llm" | "pattern"
 
 
 class SessionResponse(BaseModel):
@@ -373,9 +379,34 @@ class BrainEngine:
                 text=quick["text"],
                 intent=quick.get("intent", "greeting"),
                 state="listening",
-                latency_ms=latency_ms
+                latency_ms=latency_ms,
+                intent_source="cache",
             )
         t_cache_done = time.time()
+
+        # ── PRE-LLM: Pattern detection (fast path) ──
+        # If a high-confidence pattern matches, skip the Claude API call entirely.
+        # This is faster (saves 2-4s of LLM latency) and more reliable for
+        # known data queries where STT transcripts may confuse the LLM.
+        t_pattern = time.time()
+        pre_llm_actions = _detect_actions_from_query(text)
+        t_pattern_done = time.time()
+        if pre_llm_actions:
+            latency_ms = (time.time() - start_time) * 1000
+            matched_action = pre_llm_actions[0]["action"]
+            logger.info(
+                "[Pattern] Pre-LLM match: '%s' → %s (skipping Claude API, %.0fms)",
+                text[:60], matched_action, latency_ms,
+            )
+            return BrainResponse(
+                request_id=request_id,
+                text=".",
+                intent=matched_action,
+                actions=pre_llm_actions,
+                state="listening",
+                latency_ms=latency_ms,
+                intent_source="pattern",
+            )
 
         if not self.client:
             return BrainResponse(
@@ -508,11 +539,16 @@ class BrainEngine:
 
             # ── TIMING: Fallback action detection ──
             t_fallback = time.time()
+            _intent_source = "llm"
             if not actions:
                 actions = _detect_actions_from_query(text)
                 if actions:
                     brain_text = "."
-                    logger.info("Fallback action detected: %s", actions[0]["action"])
+                    _intent_source = "pattern"
+                    logger.info(
+                        "[Fallback] Pattern match: '%s' → %s (LLM missed)",
+                        text[:60], actions[0]["action"],
+                    )
             t_fallback_done = time.time()
 
             # Guard: Claude API requires non-empty content in all messages
@@ -530,11 +566,12 @@ class BrainEngine:
 
             # ── TIMING BREAKDOWN ──
             logger.info(
-                "TIMING: total=%.0fms | cache=%.0fms | build=%.0fms | "
+                "TIMING: total=%.0fms | cache=%.0fms | pattern=%.0fms | build=%.0fms | "
                 "api=%.0fms (first_token=%.0fms) | parse=%.0fms | fallback=%.0fms | "
                 "intent=%s actions=%d",
                 latency_ms,
                 (t_cache_done - t_cache) * 1000,
+                (t_pattern_done - t_pattern) * 1000,
                 (t_build_done - t_build) * 1000,
                 (t_api_done - t_api) * 1000,
                 ((t_first_token - t_api) * 1000) if t_first_token else 0,
@@ -551,7 +588,8 @@ class BrainEngine:
                 entities=entities,
                 actions=actions,
                 state=state,
-                latency_ms=latency_ms
+                latency_ms=latency_ms,
+                intent_source=_intent_source,
             )
 
         except Exception as exc:
