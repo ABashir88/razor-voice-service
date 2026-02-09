@@ -9,6 +9,7 @@
 //   const summary = await priorityEngine.getPriorities();
 
 import makeLogger from '../utils/logger.js';
+import { formatTimeForTTS } from '../utils/format-time.js';
 
 const log = makeLogger('Priorities');
 
@@ -73,9 +74,7 @@ class PriorityEngine {
       const events = cal.calendarEvents || cal.events || (Array.isArray(cal) ? cal : null);
       if (events?.length > 0) {
         const first = events[0];
-        const time = first.start
-          ? new Date(first.start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-          : '';
+        const time = first.start ? formatTimeForTTS(first.start) : '';
         const name = (first.summary || 'meeting').split(/\s+/).slice(0, 3).join(' ');
         parts.push(`Next up, ${name}${time ? ' at ' + time : ''}`);
       } else {

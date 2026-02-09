@@ -73,6 +73,51 @@ function flagTTSIssues(text) {
   return issues;
 }
 
+// ── Sanitize text for cloud TTS — strip characters that cause Telnyx 400 errors ──
+function sanitizeForTTS(text) {
+  if (!text) return text;
+  let s = text;
+
+  // Remove short bracket content as formatting artifacts: [X] → X, (Y) → Y
+  s = s.replace(/\[([^\]]{0,3})\]/g, '$1');
+  s = s.replace(/\(([^)]{0,3})\)/g, '$1');
+  // Remove remaining brackets/parens/braces
+  s = s.replace(/[[\](){}]/g, '');
+
+  // Remove numbered list markers (e.g. "1. Item" → "Item")
+  s = s.replace(/^\d+\.\s+/gm, '');
+
+  // Smart quotes → straight quotes
+  s = s.replace(/[\u201C\u201D\u201E\u201F]/g, '"');
+  s = s.replace(/[\u2018\u2019\u201A\u201B]/g, "'");
+
+  // Em/en dashes → comma
+  s = s.replace(/[\u2013\u2014]/g, ', ');
+
+  // Ellipsis character → period
+  s = s.replace(/\u2026/g, '.');
+
+  // Strip markdown bold/italic markers
+  s = s.replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1');
+  s = s.replace(/_{1,3}([^_]+)_{1,3}/g, '$1');
+
+  // Pipe characters → comma (table formatting)
+  s = s.replace(/\|/g, ', ');
+
+  // Hash marks (headers)
+  s = s.replace(/^#{1,6}\s+/gm, '');
+
+  // Backslash escapes
+  s = s.replace(/\\([^\\])/g, '$1');
+
+  // Collapse multiple commas/periods/spaces
+  s = s.replace(/,{2,}/g, ',');
+  s = s.replace(/\.{2,}/g, '.');
+  s = s.replace(/\s{2,}/g, ' ');
+
+  return s.trim();
+}
+
 class TtsEngine {
   constructor() {
     this.provider = this._resolveProvider();
@@ -210,9 +255,10 @@ class TtsEngine {
     // Insert pauses for clarity before synthesis
     text = this.addPauses(text);
 
-    // Truncate long responses for speed — spoken output should be brief
-    const maxChars = config.tts.maxCharsForSpeed || 200;
+    // Safety-net truncation — formatters self-limit, so this should rarely fire
+    const maxChars = config.tts.maxCharsForSpeed || 2000;
     if (text.length > maxChars) {
+      const originalLen = text.length;
       const truncated = text.slice(0, maxChars);
       // Cut at last sentence boundary for natural speech
       const lastEnd = Math.max(
@@ -220,8 +266,10 @@ class TtsEngine {
         truncated.lastIndexOf('! '),
         truncated.lastIndexOf('? '),
       );
+      const lostContent = text.substring(lastEnd > maxChars * 0.4 ? lastEnd + 1 : maxChars);
       text = lastEnd > maxChars * 0.4 ? truncated.slice(0, lastEnd + 1) : truncated;
-      log.info(`Truncated TTS text to ${text.length} chars for speed`);
+      log.warn(`[TTS] ⚠️ TRUNCATED: ${originalLen} → ${text.length} chars (cut ${originalLen - text.length} chars)`);
+      log.warn(`[TTS] ⚠️ Lost content: "...${lostContent.slice(0, 120)}"`);
     }
 
     const paceConfig = config.pacing[pace] || config.pacing.normal;
@@ -251,9 +299,26 @@ class TtsEngine {
     } catch (err) {
       log.error(`TTS synthesis failed (${this.provider}): ${err.message}`);
 
-      // If a cloud provider fails at runtime, try macOS as emergency fallback
+      // Fix 7: If Telnyx returned 400, retry with ultra-aggressive text cleanup
+      // (synthesizeTelnyx already runs sanitizeForTTS, so this does a deeper strip)
+      if (this.provider === 'telnyx' && err.message.includes('400')) {
+        const ultraClean = text.replace(/[^a-zA-Z0-9\s.,!?'"%-]/g, ' ').replace(/\s{2,}/g, ' ').trim();
+        log.warn(`[TTS] Telnyx 400 — retrying with ultra-sanitized text (${ultraClean.length} chars)...`);
+        if (ultraClean.length > 2) {
+          try {
+            const result = await this.synthesizeTelnyx(ultraClean, paceConfig);
+            const latency = Date.now() - start;
+            log.info(`[TTS] Ultra-sanitized retry succeeded: ${(result.buffer.length / 1024).toFixed(0)}KB, ${latency}ms`);
+            return result;
+          } catch (retryErr) {
+            log.warn(`[TTS] Ultra-sanitized retry also failed: ${retryErr.message}`);
+          }
+        }
+      }
+
+      // Last resort: macOS say fallback (FRANKENSTEIN — different voice!)
       if (this.provider !== 'macos') {
-        log.warn('Attempting macOS say fallback...');
+        log.warn('[TTS] FRANKENSTEIN FALLBACK: Using macOS say (different voice!)');
         try {
           const result = await this.synthesizeMacOS(text, pace);
           const latency = Date.now() - start;
@@ -282,7 +347,7 @@ class TtsEngine {
     try {
       await execFileAsync('say', ['-v', voice, '-r', String(wpm), '-o', tmpFile, text]);
       const buffer = await readFile(tmpFile);
-      return { buffer, format: 'aiff' };
+      return { buffer, format: 'aiff', provider: 'macos_say' };
     } finally {
       unlink(tmpFile).catch(() => {});
     }
@@ -293,6 +358,9 @@ class TtsEngine {
     const apiKey = config.tts.telnyx.apiKey;
     if (!apiKey) throw new Error('No Telnyx API key. Set TELNYX_API_KEY in .env');
 
+    // Sanitize text to prevent 400 errors from special characters
+    const cleanText = sanitizeForTTS(text);
+
     const response = await fetch(config.tts.telnyx.endpoint, {
       method: 'POST',
       headers: {
@@ -300,7 +368,7 @@ class TtsEngine {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        text,
+        text: cleanText,
         voice: config.tts.telnyx.voice,
       }),
       signal: AbortSignal.timeout(5000),
@@ -312,7 +380,7 @@ class TtsEngine {
     }
 
     const buffer = Buffer.from(await response.arrayBuffer());
-    return { buffer, format: 'mp3' };
+    return { buffer, format: 'mp3', provider: 'telnyx' };
   }
 
   // ── ElevenLabs TTS ──
@@ -354,7 +422,7 @@ class TtsEngine {
     }
 
     const buffer = Buffer.from(await response.arrayBuffer());
-    return { buffer, format: 'mp3' };
+    return { buffer, format: 'mp3', provider: 'elevenlabs' };
   }
 
 }

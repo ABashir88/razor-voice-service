@@ -170,7 +170,14 @@ _ACTION_PATTERNS: list[tuple[_re.Pattern, dict]] = [
     # ═══════════════════════════════════════════════════════════════════
     # GOOGLE
     # ═══════════════════════════════════════════════════════════════════
-    (_re.compile(r"(what.?s on my calendar|calendar|my schedule|meetings? this week)", _re.I),
+    # Calendar — this week (must be before bare "calendar" to win priority)
+    (_re.compile(r"(meetings? this week|this week.?s (?:calendar|meetings?|schedule)|calendar this week|schedule this week|my week)", _re.I),
+     {"action": "check_calendar", "params": {"days": 5}}),
+    # Calendar — tomorrow (simple: if "tomorrow" appears anywhere, it's a tomorrow query)
+    (_re.compile(r"\btomorrow\b", _re.I),
+     {"action": "check_calendar", "params": {"days": 2}}),
+    # Calendar — today / default
+    (_re.compile(r"(what.?s on my calendar|calendar|my schedule)", _re.I),
      {"action": "check_calendar", "params": {"days": 1}}),
     (_re.compile(r"(check my email|any new emails?|unread emails?|check email)", _re.I),
      {"action": "get_unread_emails", "params": {}}),
@@ -219,7 +226,7 @@ _ACTION_PATTERNS: list[tuple[_re.Pattern, dict]] = [
     # GOOGLE — additional patterns
     # ═══════════════════════════════════════════════════════════════════
     (_re.compile(r"my schedule|what(?:'s| is) on (?:my )?(?:calendar|schedule)|meetings? today", _re.I),
-     {"action": "check_calendar", "params": {}}),
+     {"action": "check_calendar", "params": {"days": 1}}),
     (_re.compile(r"unread (?:email|mail)s?|new (?:email|mail)s?", _re.I),
      {"action": "get_unread_emails", "params": {}}),
 
@@ -260,8 +267,8 @@ def _detect_actions_from_query(text: str) -> list[dict]:
             if action["action"] == "research":
                 action["params"] = {"query": text}
             logger.info(
-                "[Pattern] MATCH: '%s' → %s (pattern: %s)",
-                lower[:60], action["action"], pattern.pattern[:40],
+                "[Pattern] MATCH: '%s' → %s(%s) (pattern: %s)",
+                lower[:60], action["action"], action.get("params", {}), pattern.pattern[:40],
             )
             return [action]
 
@@ -270,8 +277,10 @@ def _detect_actions_from_query(text: str) -> list[dict]:
         # Extract name: take last 1-3 capitalized words or everything after "look up"/"find"
         name_match = _re.search(r"(?:look\s*up|find|search\s*for|who\s*is)\s+(.+?)(?:\?|$|'s)", text, _re.I)
         name = name_match.group(1).strip() if name_match else text
+        logger.info("[Pattern] MATCH (contact): '%s' → lookup_contact(name=%s)", lower[:60], name[:30])
         return [{"action": "lookup_contact", "params": {"name": name}}]
 
+    logger.info("[Pattern] No match for: \"%s\" — falling through to LLM", lower[:80])
     return []
 
 

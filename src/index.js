@@ -20,6 +20,7 @@ import { morningBriefing } from './intelligence/morning-briefing.js';
 import { priorityEngine } from './intelligence/priorities.js';
 import makeLogger from './utils/logger.js';
 import speechLogger from "./utils/speech-logger.js";
+import { formatTimeForTTS } from "./utils/format-time.js";
 
 const log = makeLogger('Main');
 const sm = getStateMachine();
@@ -123,6 +124,7 @@ async function dispatchAction(action) {
   log.info(`[Dispatch] ${type} → ${service}`);
   const dispatchStart = Date.now();
   let _dispatchFailed = false;
+  let _dispatchError = null;
 
   try {
     switch (type) {
@@ -225,7 +227,7 @@ async function dispatchAction(action) {
       case 'check_time':
       case 'get_time': {
         const now = new Date();
-        const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        const time = formatTimeForTTS(now);
         const day = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
         return { time, day, text: `It's ${time}, ${day}.` };
       }
@@ -350,7 +352,7 @@ async function dispatchAction(action) {
           const cadences = await integrations.salesloft.getMyCadences();
           if (!cadences?.length) return "No active cadences.";
           const top3 = cadences.slice(0, 3).map(c => c.name).join(", ");
-          return `You have ${cadences.length} active cadence${cadences.length > 1 ? "s" : ""} including ${top3}`;
+          return `You have ${cadences.length} active cadence${cadences.length > 1 ? "s" : ""}, all owned by you. Top ones: ${top3}`;
         }
         return "Salesloft not connected.";
       }
@@ -387,8 +389,13 @@ async function dispatchAction(action) {
           const deals = await integrations.salesforce.getDealsClosing(period);
           if (!deals?.length) return `No deals closing ${period.replace("_", " ")}.`;
           const total = deals.reduce((sum, d) => sum + (d.Amount || 0), 0);
-          const top3 = deals.slice(0, 3).map(d => d.Account?.Name || d.Name?.split(" - ")[0] || "Unknown").join(", ");
-          return `${deals.length} deal${deals.length > 1 ? "s" : ""} closing ${period.replace("_", " ")} worth ${Math.round(total/1000)} thousand total including ${top3}`;
+          const show = deals.slice(0, 5);
+          const items = show.map(d => {
+            const name = d.Account?.Name || d.Name?.split(" - ")[0] || "Unknown";
+            const amt = d.Amount ? ` at ${Math.round(d.Amount / 1000)}K` : '';
+            return `${name}${amt}`;
+          }).join(', ');
+          return `${deals.length} deal${deals.length > 1 ? "s" : ""} closing ${period.replace("_", " ")} worth ${Math.round(total/1000)} thousand. ${items}`;
         }
         return "Salesforce not connected.";
       }
@@ -447,11 +454,12 @@ async function dispatchAction(action) {
           try {
             const slots = await integrations.google.findFreeSlots(params.start, params.end, params.duration || 30);
             if (!slots?.length) return "No free slots today.";
-            const firstTime = new Date(slots[0].start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            const firstTime = formatTimeForTTS(slots[0].start);
             return `${slots.length} free slot${slots.length > 1 ? "s" : ""} today. First one starts at ${firstTime}`;
           } catch (err) {
+            _dispatchFailed = true;
             log.warn('findFreeSlots failed:', err.message);
-            return "Couldn't check free time right now. Try asking for your calendar instead.";
+            return null;
           }
         }
         return "Google not connected.";
@@ -672,11 +680,18 @@ async function dispatchAction(action) {
     }
   } catch (err) {
     _dispatchFailed = true;
+    _dispatchError = err;
     log.error(`Action ${type} failed:`, err.message);
     return null;
   } finally {
     const elapsedMs = Date.now() - dispatchStart;
-    log.info(`[Dispatch] ${type} → ${service} (${elapsedMs}ms, ${_dispatchFailed ? '✗' : '✓'})`);
+    if (_dispatchFailed) {
+      const errMsg = _dispatchError?.message || 'unknown';
+      const errCode = _dispatchError?.code || _dispatchError?.status || '';
+      log.error(`[Dispatch] ❌ ${type} → ${service} FAILED (${elapsedMs}ms) — ${errCode ? errCode + ': ' : ''}${errMsg}`);
+    } else {
+      log.info(`[Dispatch] ${type} → ${service} (${elapsedMs}ms, ✓)`);
+    }
     if (pipeline?.recordIntegrationCall) {
       pipeline.recordIntegrationCall(service, !_dispatchFailed, elapsedMs);
     }
@@ -948,12 +963,14 @@ async function handleCommand({ text, source }) {
             const dispatchStart = Date.now();
             const result = await dispatchAction(a);
             const dispatchMs = Date.now() - dispatchStart;
+            // Detect error results: null, or object with .error property
+            const isError = result == null || (typeof result === 'object' && result !== null && result.error);
             // Track integration health
             const svc = _actionToService(a.action);
-            if (svc) pipeline.recordIntegrationCall(svc, result != null, dispatchMs);
-            // Cache the result for future queries
-            if (result != null) queryCache.set(a.action, result, undefined, a.params);
-            return { action: a.action, params: a.params, result };
+            if (svc) pipeline.recordIntegrationCall(svc, !isError, dispatchMs);
+            // Cache only successful results — never cache errors
+            if (!isError) queryCache.set(a.action, result, undefined, a.params);
+            return { action: a.action, params: a.params, result, failed: isError };
           }),
         );
 
@@ -961,7 +978,7 @@ async function handleCommand({ text, source }) {
           pipeline._turn.dataFetchEndedAt = Date.now();
           pipeline._turn.dataFetchMs = pipeline._turn.dataFetchStartedAt ? Date.now() - pipeline._turn.dataFetchStartedAt : 0;
           for (const r of results) {
-            pipeline._turn.actions.push({ action: r.action, params: r.params, succeeded: r.result != null });
+            pipeline._turn.actions.push({ action: r.action, params: r.params, succeeded: !r.failed });
           }
         }
 
@@ -975,7 +992,7 @@ async function handleCommand({ text, source }) {
             .join(' ');
           if (dataSummary) {
             speakText = humanizeResponse(dataSummary);
-            log.info(`Data response: "${speakText.slice(0, 80)}${speakText.length > 80 ? '...' : ''}"`);
+            log.info(`Data response (${speakText.length} chars): "${speakText.slice(0, 200)}${speakText.length > 200 ? '...' : ''}"`);;
             // Update conversation context with fetched data
             fetched.forEach(r => updateConversationContext(r.action, r.result, formatDataForSpeech(r.action, r.result)));
           } else {
@@ -1092,12 +1109,29 @@ function extractSpeakableText(rawText) {
   // Strip markdown code blocks (```json ... ```)
   text = text.replace(/```[\w]*\n?/g, '').trim();
 
-  // If the whole thing looks like a JSON object, extract the text field
-  if (text.startsWith('{') && text.endsWith('}')) {
+  // If the text starts with '{', try to extract the "text" field from JSON
+  if (text.startsWith('{')) {
+    // Strategy 1: full JSON parse
     try {
       const parsed = JSON.parse(text);
       if (parsed.text) return parsed.text;
-    } catch { /* not valid JSON, keep going */ }
+    } catch { /* not valid JSON */ }
+
+    // Strategy 2: truncated JSON — find last '}' and try parsing that substring
+    const closeBrace = text.lastIndexOf('}');
+    if (closeBrace > 0) {
+      try {
+        const parsed = JSON.parse(text.slice(0, closeBrace + 1));
+        if (parsed.text) return parsed.text;
+      } catch { /* still not valid */ }
+    }
+  }
+
+  // Strategy 3: regex extraction for "text" field (handles partial/malformed JSON anywhere)
+  const textMatch = text.match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  if (textMatch) {
+    const extracted = textMatch[1].replace(/\\"/g, '"').replace(/\\n/g, ' ').trim();
+    if (extracted && extracted !== '.' && extracted.length > 2) return extracted;
   }
 
   // Remove embedded JSON fragments like {"action": ...} mid-sentence
@@ -1197,18 +1231,23 @@ function shortTitle(str) {
   return words.slice(0, 3).join(' ');
 }
 
-// ── Format time from event start ──
+// ── Format time from event start (TTS-friendly: "7 PM" or "1 30 PM") ──
+// Uses shared formatTimeForTTS — no colons, no humanizeResponse corruption
 function fmtTime(e) {
   if (!e?.start) return '';
-  return new Date(e.start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return formatTimeForTTS(e.start);
 }
 
 // ── Format raw integration data into speakable text ──
 function formatDataForSpeech(actionType, data) {
   if (!data) return null;
 
-  // Briefings and priorities are pre-curated for TTS — no truncation needed
-  if (actionType === 'morning_briefing' || actionType === 'daily_briefing' || actionType === 'give_briefing' || actionType === 'get_priorities') {
+  // Pre-curated responses — no truncation needed (already formatted for TTS)
+  const NO_TRUNCATE = ['morning_briefing', 'daily_briefing', 'give_briefing', 'get_priorities',
+    'get_action_items', 'get_tasks', 'my_action_items', 'action_items',
+    'get_overdue_items', 'overdue_tasks',
+    'get_deals_closing', 'deals_closing', 'closing_this_week', 'closing_this_month'];
+  if (NO_TRUNCATE.includes(actionType)) {
     return typeof data === 'string' ? data : data.text || null;
   }
 
@@ -1219,12 +1258,16 @@ function formatDataForSpeech(actionType, data) {
     const events = data.calendarEvents || data.events || (Array.isArray(data) ? data : null);
     if (events) {
       if (events.length === 0) return "You're clear, no meetings.";
-      const first = events[0];
-      const time = fmtTime(first);
       if (events.length === 1) {
-        return truncateForTTS(`One meeting: ${shortName(first.summary)} at ${time}.`);
+        return `One meeting: ${shortName(events[0].summary)} at ${fmtTime(events[0])}.`;
       }
-      return truncateForTTS(`${events.length} meetings. First: ${shortName(first.summary)} at ${time}.`);
+      const show = events.slice(0, 10);
+      const parts = [`${events.length} meetings.`];
+      for (let i = 0; i < show.length; i++) {
+        parts.push(`${i + 1}. ${shortName(show[i].summary)} at ${fmtTime(show[i])}.`);
+      }
+      if (events.length > 10) parts.push(`Plus ${events.length - 10} more.`);
+      return parts.join(' ');
     }
   }
 
@@ -1261,12 +1304,16 @@ function formatDataForSpeech(actionType, data) {
     }
   }
 
-  // Research
+  // Research — prefer summary, then top result descriptions (not titles)
   if (actionType === 'research' || actionType === 'search_web') {
+    if (data.summary) return truncateForTTS(data.summary, 500);
     if (data.results && Array.isArray(data.results) && data.results.length > 0) {
-      return truncateForTTS(data.results[0].snippet || data.results[0].title || 'No results.');
+      const descs = data.results.slice(0, 3)
+        .map(r => r.description || r.snippet || '')
+        .filter(Boolean);
+      if (descs.length > 0) return truncateForTTS(descs.join(' '), 500);
+      return truncateForTTS(data.results[0].title || 'No results.');
     }
-    if (data.summary) return truncateForTTS(data.summary);
   }
 
   // Email
@@ -1313,8 +1360,8 @@ function humanizeResponse(text) {
     return `You've got ${n} hot leads`;
   });
 
-  // "You have X deal" → shorter
-  r = r.replace(/^You have (\d+) deal/i, (_, n) => {
+  // "You have X deal(s)" → shorter (consume optional 's' to avoid "dealss")
+  r = r.replace(/^You have (\d+) deals?/i, (_, n) => {
     return parseInt(n) === 1 ? 'One deal' : `${n} deals`;
   });
 

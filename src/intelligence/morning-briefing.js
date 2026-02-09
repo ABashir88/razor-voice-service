@@ -17,6 +17,7 @@
 
 import EventEmitter from 'eventemitter3';
 import makeLogger from '../utils/logger.js';
+import { formatTimeForTTS } from '../utils/format-time.js';
 
 const log = makeLogger('MorningBriefing');
 
@@ -109,7 +110,7 @@ class MorningBriefing extends EventEmitter {
         const events = await this._integrations.google.getUpcomingEvents(1);
         if (events?.length > 0) {
           const first = events[0];
-          const time = new Date(first.start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+          const time = formatTimeForTTS(first.start);
           const name = (first.summary || 'Meeting').split(/\s+/).slice(0, 3).join(' ');
           if (events.length === 1) {
             parts.push(`One meeting today, ${name} at ${time}.`);
