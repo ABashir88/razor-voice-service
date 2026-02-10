@@ -19,10 +19,6 @@
   .tx-who{font-size:9px;font-weight:700;letter-spacing:5px;text-transform:uppercase;margin-bottom:5px}
   .tx-text{font-size:16px;font-weight:200;line-height:1.7;color:rgba(255,255,255,0.6);max-width:540px;margin:0 auto;padding:0 20px}
 
-  .ctrl{position:fixed;bottom:16px;width:100%;display:flex;justify-content:center;gap:6px;z-index:20}
-  .ctrl button{padding:7px 16px;border:1px solid rgba(255,255,255,0.06);border-radius:5px;background:rgba(255,255,255,0.02);color:rgba(255,255,255,0.22);font-family:inherit;font-size:10px;font-weight:600;letter-spacing:2px;cursor:pointer;transition:all 0.25s}
-  .ctrl button:hover{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5)}
-  .ctrl button.on{background:rgba(100,255,218,0.06);color:#64FFDA;border-color:rgba(100,255,218,0.15)}
 
   .tech-label{position:fixed;font-size:8px;font-weight:600;letter-spacing:3px;text-transform:uppercase;padding:3px 8px;border-radius:3px;pointer-events:none;z-index:5;white-space:nowrap;transition:opacity 0.3s}
 </style>
@@ -33,15 +29,6 @@
 <div class="brand">R A Z O R</div>
 <div id="stateLabel">IDLE</div>
 <div id="transcript"><div class="tx-who" id="txWho"></div><div class="tx-text" id="txText"></div></div>
-
-<div class="ctrl">
-  <button onclick="setState('idle')">IDLE</button>
-  <button onclick="setState('listening')">LISTEN</button>
-  <button onclick="setState('processing')">THINK</button>
-  <button onclick="setState('speaking')">SPEAK</button>
-  <button id="demoBtn" onclick="runDemo()">▶ DEMO</button>
-  <button id="demoToggle" onclick="toggleDemo()">DEMO: ON</button>
-</div>
 
 <script>
 // ═══════════════════════════════════════════════════════════════
@@ -76,71 +63,75 @@ addEventListener('resize', resize);
 
 const STATES = {
   idle: {
-    coreColor: [30, 50, 180],
+    // Electric Blue — all-knowing presence
+    coreColor: [0, 102, 255],
     waveColors: [
-      [40, 80, 220, 0.3],
-      [60, 100, 255, 0.2],
-      [80, 120, 255, 0.15],
+      [0, 120, 255, 0.55],
+      [50, 150, 255, 0.45],
+      [100, 180, 255, 0.35],
     ],
-    glowColor: [30, 60, 200],
+    glowColor: [0, 90, 255],
     waveAmp: 0.03,
     waveSpeed: 0.4,
     spikeAmp: 0,
     rotSpeed: 0.08,
-    coreGlow: 0.3,
-    bloomSize: 1.3,
-    particleColor: [60, 100, 255],
+    coreGlow: 0.5,
+    bloomSize: 1.4,
+    particleColor: [80, 160, 255],
   },
   listening: {
-    coreColor: [0, 200, 170],
+    // Bright Emerald — active attention
+    coreColor: [0, 255, 136],
     waveColors: [
-      [0, 220, 180, 0.45],
-      [50, 255, 220, 0.35],
-      [100, 255, 218, 0.25],
-      [150, 255, 240, 0.15],
+      [0, 255, 150, 0.6],
+      [50, 255, 180, 0.5],
+      [100, 255, 200, 0.4],
+      [150, 255, 220, 0.3],
     ],
-    glowColor: [0, 180, 150],
+    glowColor: [0, 230, 120],
     waveAmp: 0.12,
     waveSpeed: 0.8,
     spikeAmp: 0.15,
     rotSpeed: 0.2,
-    coreGlow: 0.5,
-    bloomSize: 1.5,
-    particleColor: [100, 255, 218],
+    coreGlow: 0.65,
+    bloomSize: 1.6,
+    particleColor: [0, 255, 170],
   },
   processing: {
-    coreColor: [240, 140, 0],
+    // Vivid Purple — AI intelligence
+    coreColor: [170, 0, 255],
     waveColors: [
-      [255, 160, 20, 0.45],
-      [255, 200, 50, 0.3],
-      [255, 220, 100, 0.2],
+      [180, 30, 255, 0.6],
+      [200, 80, 255, 0.5],
+      [220, 120, 255, 0.4],
     ],
-    glowColor: [200, 120, 0],
+    glowColor: [150, 0, 240],
     waveAmp: 0.08,
     waveSpeed: 1.5,
     spikeAmp: 0.1,
     rotSpeed: 0.6,
-    coreGlow: 0.55,
-    bloomSize: 1.5,
-    particleColor: [255, 180, 50],
+    coreGlow: 0.65,
+    bloomSize: 1.6,
+    particleColor: [200, 100, 255],
   },
   speaking: {
-    coreColor: [130, 40, 230],
+    // Bright Gold — wisdom delivery
+    coreColor: [255, 176, 0],
     waveColors: [
-      [150, 50, 255, 0.5],
-      [200, 100, 255, 0.4],
-      [180, 80, 255, 0.3],
-      [220, 150, 255, 0.2],
-      [255, 200, 255, 0.12],
+      [255, 190, 30, 0.65],
+      [255, 210, 80, 0.55],
+      [255, 225, 120, 0.45],
+      [255, 240, 160, 0.35],
+      [255, 250, 200, 0.2],
     ],
-    glowColor: [120, 40, 220],
+    glowColor: [255, 160, 0],
     waveAmp: 0.22,
     waveSpeed: 1.0,
     spikeAmp: 0.35,
     rotSpeed: 0.15,
-    coreGlow: 0.75,
-    bloomSize: 1.7,
-    particleColor: [180, 100, 255],
+    coreGlow: 0.8,
+    bloomSize: 1.8,
+    particleColor: [255, 200, 50],
   },
 };
 
@@ -456,10 +447,10 @@ requestAnimationFrame(draw);
 const stateLabel = document.getElementById('stateLabel');
 const txBox = document.getElementById('transcript');
 const labelColors = {
-  idle:       'rgba(80,120,255,0.25)',
-  listening:  'rgba(100,255,218,0.4)',
-  processing: 'rgba(255,171,0,0.4)',
-  speaking:   'rgba(186,104,200,0.4)',
+  idle:       'rgba(0,102,255,0.5)',
+  listening:  'rgba(0,255,136,0.6)',
+  processing: 'rgba(170,0,255,0.6)',
+  speaking:   'rgba(255,176,0,0.6)',
 };
 
 function setState(s) {
