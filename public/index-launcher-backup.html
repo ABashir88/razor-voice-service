@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Razor Visual Cortex</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+    color: #e0e0e0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+  }
+
+  .container {
+    max-width: 1000px;
+    width: 100%;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 60px;
+  }
+
+  .logo {
+    font-size: 48px;
+    font-weight: 700;
+    letter-spacing: 12px;
+    color: #fff;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #00ffaa 0%, #ba68c8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: #888;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .status {
+    text-align: center;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 40px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .status.checking {
+    background: rgba(255,171,0,0.1);
+    border: 1px solid rgba(255,171,0,0.2);
+    color: #ffab00;
+  }
+
+  .status.connected {
+    background: rgba(0,255,170,0.1);
+    border: 1px solid rgba(0,255,170,0.2);
+    color: #00ffaa;
+  }
+
+  .status.disconnected {
+    background: rgba(255,80,80,0.1);
+    border: 1px solid rgba(255,80,80,0.2);
+    color: #ff5050;
+  }
+
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .launch {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .launch a {
+    display: inline-block;
+    background: rgba(186,104,200,0.1);
+    border: 1px solid rgba(186,104,200,0.3);
+    border-radius: 12px;
+    padding: 32px 48px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s;
+  }
+
+  .launch a:hover {
+    background: rgba(186,104,200,0.15);
+    border-color: rgba(186,104,200,0.5);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  }
+
+  .launch-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+
+  .launch-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 10px;
+  }
+
+  .launch-desc {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #aaa;
+    margin-bottom: 16px;
+    max-width: 360px;
+  }
+
+  .launch-cta {
+    font-size: 12px;
+    font-weight: 600;
+    color: #00ffaa;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .footer {
+    text-align: center;
+    color: #666;
+    font-size: 12px;
+  }
+
+  .footer-links {
+    margin-top: 12px;
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+  }
+
+  .footer-link {
+    color: #888;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .footer-link:hover {
+    color: #00ffaa;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="logo">RAZOR</div>
+    <div class="subtitle">Visual Cortex</div>
+  </div>
+
+  <div class="status checking" id="status">
+    <div class="status-dot"></div>
+    <span id="statusText">Checking bridge connection...</span>
+  </div>
+
+  <div class="launch">
+    <a href="razor-sphere.html">
+      <div class="launch-icon">&#127744;</div>
+      <div class="launch-title">Launch Sphere</div>
+      <div class="launch-desc">
+        3D flowing wave visualization with state-driven animations.
+        Perfect for demos and visual presentations.
+      </div>
+      <div class="launch-cta">Open Sphere &#8594;</div>
+    </a>
+  </div>
+
+  <div class="footer">
+    <div>Connects to the bridge server on port 3333</div>
+    <div class="footer-links">
+      <a href="http://localhost:3333/health" class="footer-link" target="_blank">Health Check</a>
+      <a href="http://localhost:3333/stats" class="footer-link" target="_blank">Stats</a>
+      <a href="README.md" class="footer-link">Documentation</a>
+    </div>
+  </div>
+</div>
+
+<script>
+async function checkBridge() {
+  const status = document.getElementById('status');
+  const statusText = document.getElementById('statusText');
+
+  try {
+    const response = await fetch('http://localhost:3333/health');
+    const data = await response.json();
+
+    if (data.status === 'healthy') {
+      status.className = 'status connected';
+      statusText.textContent = 'Bridge connected \u2022 ' + (data.clients || 0) + ' active client(s)';
+    } else {
+      status.className = 'status disconnected';
+      statusText.textContent = 'Bridge unhealthy';
+    }
+  } catch (e) {
+    status.className = 'status disconnected';
+    statusText.textContent = 'Bridge not running \u2022 Start with: node src/visual-cortex-bridge.js';
+  }
+}
+
+checkBridge();
+setInterval(checkBridge, 5000);
+</script>
+
+</body>
+</html>
