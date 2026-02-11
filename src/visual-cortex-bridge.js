@@ -62,7 +62,7 @@ class VisualCortexBridge {
       ws.clientId = clientId;
       this.clients.add(ws);
 
-      log.info(`Client connected: ${clientId} (total: ${this.clients.size})`);
+      log.info(`[Bridge] Sphere client connected (${this.clients.size} total)`);
 
       // Send current state snapshot so late-joining clients sync immediately
       this._sendToClient(ws, {
@@ -79,7 +79,7 @@ class VisualCortexBridge {
             this._sendToClient(ws, { type: 'pong' });
           } else if (msg.type === 'toggleDemo') {
             this.demoEnabled = !this.demoEnabled;
-            log.info(`Demo mode ${this.demoEnabled ? 'ENABLED' : 'DISABLED'}`);
+            log.info(`[Bridge] Demo mode ${this.demoEnabled ? 'ENABLED' : 'DISABLED'}`);
             this._broadcast({ type: 'demoState', enabled: this.demoEnabled });
           }
         } catch (e) {
@@ -89,7 +89,7 @@ class VisualCortexBridge {
 
       ws.on('close', () => {
         this.clients.delete(ws);
-        log.info(`Client disconnected: ${clientId} (total: ${this.clients.size})`);
+        log.info(`[Bridge] Sphere client disconnected (${this.clients.size} remaining)`);
       });
 
       ws.on('error', (error) => {
@@ -99,10 +99,8 @@ class VisualCortexBridge {
     });
 
     this.server.listen(port, () => {
-      log.info(`Bridge server started on port ${port}`);
-      log.info(`WebSocket: ws://localhost:${port}`);
-      log.info(`Health: http://localhost:${port}/health`);
-      log.info(`Open razor-sphere.html in browser to see visualization`);
+      log.info(`[Bridge] WebSocket server ready on ws://localhost:${port}`);
+      log.info(`[Bridge] Health: http://localhost:${port}/health`);
     });
   }
 
@@ -113,12 +111,14 @@ class VisualCortexBridge {
   setState(state) {
     const valid = ['IDLE', 'LISTENING', 'PROCESSING', 'SPEAKING'];
     if (!valid.includes(state)) {
-      log.error(`Invalid state: ${state}`);
+      log.error(`[Bridge] Invalid state: ${state}`);
       return;
     }
+    const prev = this.currentState;
     this.currentState = state;
-    this._broadcast({ type: 'state', state });
-    log.info(`State -> ${state}`);
+    log.info(`[Bridge] Received state: ${state}`);
+    const sent = this._broadcast({ type: 'state', state });
+    log.info(`[Bridge] Broadcasting to ${sent} client(s): ${prev} → ${state}`);
   }
 
   /**
@@ -138,7 +138,7 @@ class VisualCortexBridge {
    */
   showTranscript(speaker, text) {
     this._broadcast({ type: 'transcript', speaker, text });
-    log.info(`Transcript [${speaker}]: ${text.slice(0, 60)}${text.length > 60 ? '...' : ''}`);
+    log.info(`[Bridge] Transcript [${speaker}]: ${text.slice(0, 60)}${text.length > 60 ? '...' : ''}`);
   }
 
   /** Clear the transcript display */
@@ -163,17 +163,13 @@ class VisualCortexBridge {
           client.send(payload);
           sent++;
         } catch (e) {
-          log.error(`Send failed ${client.clientId}:`, e.message);
+          log.error(`[Bridge] Send failed ${client.clientId}:`, e.message);
         }
       }
     }
 
     this.messageCount++;
-
-    // Only log non-energy messages (energy fires every 50ms)
-    if (message.type !== 'energy') {
-      log.debug(`Broadcast '${message.type}' -> ${sent}/${this.clients.size} clients`);
-    }
+    return sent;
   }
 
   _sendToClient(client, message) {
@@ -222,8 +218,8 @@ class VisualCortexBridge {
   }
 
   stop() {
-    if (this.wss) { this.wss.close(); log.info('WebSocket server stopped'); }
-    if (this.server) { this.server.close(); log.info('HTTP server stopped'); }
+    if (this.wss) { this.wss.close(); log.info('[Bridge] WebSocket server stopped'); }
+    if (this.server) { this.server.close(); log.info('[Bridge] HTTP server stopped'); }
   }
 }
 
@@ -236,8 +232,7 @@ const isMain = process.argv[1] === fileURLToPath(import.meta.url);
 if (isMain) {
   bridge.start(3333);
 
-  log.info('Running in demo mode — simulating voice events every 15s');
-  log.info('Open razor-sphere.html in browser to see visualization');
+  log.info('[Bridge] Running in standalone demo mode — simulating voice events every 15s');
 
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -258,12 +253,14 @@ if (isMain) {
     const ok = () => bridge.demoEnabled;
 
     demoN++;
-    log.info(`=== Demo ${demoN} ===`);
+    log.info(`[Bridge] [Demo] === Cycle ${demoN} start ===`);
 
+    log.info('[Bridge] [Demo] State: IDLE');
     bridge.setState('IDLE');
     await sleep(2000);
     if (!ok()) return;
 
+    log.info('[Bridge] [Demo] State: LISTENING');
     bridge.setState('LISTENING');
     simulateEnergy(1500);
     await sleep(500);
@@ -272,6 +269,7 @@ if (isMain) {
     await sleep(2000);
     if (!ok()) return;
 
+    log.info('[Bridge] [Demo] State: PROCESSING');
     bridge.setState('PROCESSING');
     await sleep(1500);
     if (!ok()) return;
@@ -279,12 +277,14 @@ if (isMain) {
     await sleep(1000);
     if (!ok()) return;
 
+    log.info('[Bridge] [Demo] State: SPEAKING');
     bridge.setState('SPEAKING');
     simulateEnergy(4000);
     bridge.showTranscript('razor', '3 deals closing Friday, $127K total. UnifyGTM at $85K is your biggest. Start there.');
     await sleep(5000);
     if (!ok()) return;
 
+    log.info('[Bridge] [Demo] State: IDLE (cycle end)');
     bridge.setState('IDLE');
     bridge.clearTranscript();
   }

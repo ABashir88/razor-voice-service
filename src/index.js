@@ -18,8 +18,10 @@ import { getConversationContext } from "./context/conversation-context.js";
 import { queryCache } from './intelligence/query-cache.js';
 import { morningBriefing } from './intelligence/morning-briefing.js';
 import { priorityEngine } from './intelligence/priorities.js';
+import { exec } from 'child_process';
 import makeLogger from './utils/logger.js';
 import speechLogger from "./utils/speech-logger.js";
+import bridge from './visual-cortex-bridge.js';
 
 const log = makeLogger('Main');
 const sm = getStateMachine();
@@ -851,6 +853,7 @@ async function handleCommand({ text, source }) {
 
   // Record user turn in memory
   memory.addTurn('user', text, { source });
+  bridge.showTranscript('user', text);
 
 
   // ── Layer 2/3: Check for context-aware follow-up ──
@@ -1610,6 +1613,7 @@ async function shutdown() {
 
   await pipeline.stop();
   await brain.disconnect();
+  bridge.stop();
   log.info('Razor shutdown complete');
   process.exit(0);
 }
@@ -1700,8 +1704,15 @@ async function main() {
     log.info('No command received — returning to idle');
   });
 
-  pipeline.on('state', (newState) => {
+  pipeline.on('state', (newState, oldState) => {
     process.stdout.write(`\x1b]0;Razor [${newState}]\x07`);
+    const ts = new Date().toLocaleTimeString();
+    if (oldState) {
+      log.info(`[Sphere] ${oldState} → ${newState}  (${ts})`);
+    } else {
+      log.info(`[Sphere] State: ${newState}  (${ts})`);
+    }
+    bridge.setState(newState);
   });
 
   await pipeline.start();
@@ -1711,6 +1722,23 @@ async function main() {
 
   // Initialize priority engine
   priorityEngine.init(integrations);
+
+  // ── Visual Cortex Bridge (in-process) ──
+  try {
+    bridge.demoEnabled = false; // disable demo — real pipeline drives state
+    bridge.start(3333);
+    log.info('Visual Cortex Bridge started on port 3333');
+
+    // Open Sphere in browser after bridge is ready
+    setTimeout(() => {
+      exec('open public/index.html', (err) => {
+        if (err) log.warn('Failed to open Sphere UI:', err.message);
+        else log.info('Sphere UI opened in browser');
+      });
+    }, 2000);
+  } catch (err) {
+    log.warn('Visual Cortex Bridge unavailable:', err.message);
+  }
 
   log.info('');
   log.info('┌─────────────────────────────────────────┐');
