@@ -603,8 +603,9 @@ async function dispatchAction(action) {
         if (integrations.fellow) {
           const meetings = await integrations.fellow.getTodaysMeetings();
           if (!meetings?.length) return "No meetings scheduled for today.";
-          const names = meetings.slice(0, 3).map(m => m.title).join(", ");
-          return `You have ${meetings.length} meeting${meetings.length > 1 ? "s" : ""} today including ${names}`;
+          const out = _formatTodayMeetingsForTTS(meetings);
+          if (out.length > TTS_MAX) log.error(`[TodayMeetings TTS] ${out.length} chars: "${out}"`);
+          return out;
         }
         return "Fellow not connected.";
       }
@@ -1238,6 +1239,62 @@ function fmtTime(e) {
   return formatTimeForTTS(e.start);
 }
 
+// ── TTS-safe formatters — hard cap at 100 chars to avoid Frankenstein ──
+const TTS_MAX = 100;
+
+function _formatCalendarForTTS(events) {
+  if (!events || events.length === 0) return "You're clear, no meetings.";
+  const n = events.length;
+  if (n === 1) {
+    const name = shortName(events[0].summary), time = fmtTime(events[0]);
+    const full = `You have ${name} at ${time}.`;
+    if (full.length <= TTS_MAX) return full;
+    const budget = TTS_MAX - `You have  at ${time}.`.length;
+    return `You have ${name.slice(0, budget)} at ${time}.`;
+  }
+  if (n === 2) {
+    const n1 = shortName(events[0].summary), t1 = fmtTime(events[0]);
+    const n2 = shortName(events[1].summary), t2 = fmtTime(events[1]);
+    const full = `You have ${n1} at ${t1} and ${n2} at ${t2}.`;
+    if (full.length <= TTS_MAX) return full;
+  }
+  {
+    const name = shortName(events[0].summary), time = fmtTime(events[0]);
+    const more = n - 1;
+    const full = `You have ${name} at ${time} and ${more} more meeting${more > 1 ? 's' : ''}.`;
+    if (full.length <= TTS_MAX) return full;
+    const shell = `You have  at ${time} and ${more} more meeting${more > 1 ? 's' : ''}.`;
+    const budget = TTS_MAX - shell.length;
+    if (budget > 5) return `You have ${name.slice(0, budget)} at ${time} and ${more} more meeting${more > 1 ? 's' : ''}.`;
+  }
+  return `You have ${n} meetings.`;
+}
+
+function _formatTodayMeetingsForTTS(meetings) {
+  if (!meetings || meetings.length === 0) return 'No meetings scheduled for today.';
+  const n = meetings.length;
+  const name = (i) => shortName(meetings[i]?.title);
+  if (n === 1) {
+    const full = `Today you have ${name(0)}.`;
+    if (full.length <= TTS_MAX) return full;
+    const budget = TTS_MAX - 'Today you have .'.length;
+    return `Today you have ${name(0).slice(0, budget)}.`;
+  }
+  if (n === 2) {
+    const full = `Today you have ${name(0)} and ${name(1)}.`;
+    if (full.length <= TTS_MAX) return full;
+  }
+  {
+    const more = n - 1;
+    const full = `Today you have ${name(0)} and ${more} more meeting${more > 1 ? 's' : ''}.`;
+    if (full.length <= TTS_MAX) return full;
+    const shell = `Today you have  and ${more} more meeting${more > 1 ? 's' : ''}.`;
+    const budget = TTS_MAX - shell.length;
+    if (budget > 5) return `Today you have ${name(0).slice(0, budget)} and ${more} more meeting${more > 1 ? 's' : ''}.`;
+  }
+  return `Today you have ${n} meetings.`;
+}
+
 // ── Format raw integration data into speakable text ──
 function formatDataForSpeech(actionType, data) {
   if (!data) return null;
@@ -1257,17 +1314,9 @@ function formatDataForSpeech(actionType, data) {
   if (actionType === 'check_calendar' || actionType === 'get_calendar' || actionType === 'get_schedule') {
     const events = data.calendarEvents || data.events || (Array.isArray(data) ? data : null);
     if (events) {
-      if (events.length === 0) return "You're clear, no meetings.";
-      if (events.length === 1) {
-        return `One meeting: ${shortName(events[0].summary)} at ${fmtTime(events[0])}.`;
-      }
-      const show = events.slice(0, 10);
-      const parts = [`${events.length} meetings.`];
-      for (let i = 0; i < show.length; i++) {
-        parts.push(`${i + 1}. ${shortName(show[i].summary)} at ${fmtTime(show[i])}.`);
-      }
-      if (events.length > 10) parts.push(`Plus ${events.length - 10} more.`);
-      return parts.join(' ');
+      const out = _formatCalendarForTTS(events);
+      if (out.length > TTS_MAX) log.error(`[Calendar TTS] ${out.length} chars: "${out}"`);
+      return out;
     }
   }
 
