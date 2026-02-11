@@ -10,7 +10,7 @@
   body{background:#000;overflow:hidden;font-family:'Outfit',sans-serif;display:flex;align-items:center;justify-content:center;width:100vw;height:100vh}
   canvas{position:fixed;top:0;left:0}
 
-  #stateLabel{position:fixed;bottom:60px;width:100%;text-align:center;font-size:28px;font-weight:300;letter-spacing:14px;z-index:10;pointer-events:none;transition:color 1.2s, text-shadow 1.2s;text-shadow:0 0 30px currentColor,0 0 60px currentColor}
+  #stateLabel{position:fixed;bottom:60px;width:100%;text-align:center;font-size:28px;font-weight:300;letter-spacing:14px;z-index:10;pointer-events:none;transition:color 0.4s, text-shadow 0.4s;text-shadow:0 0 20px currentColor,0 0 50px currentColor}
 
   #transcript{position:fixed;bottom:120px;width:100%;text-align:center;z-index:10;pointer-events:none;opacity:0;transition:opacity 0.5s}
   #transcript.show{opacity:1}
@@ -26,8 +26,7 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════════
-//  SPHERE — Canvas 2D Flowing Wave Visualization
-//  Layered luminous waves with additive blending
+//  SPHERE v2 — Sharp, vivid, orbiting labels
 // ═══════════════════════════════════════════════════════════════
 
 const canvas = document.getElementById('c');
@@ -36,105 +35,111 @@ const ctx = canvas.getContext('2d');
 let W, H, CX, CY, R;
 
 function resize() {
-  const dpr = Math.min(devicePixelRatio, 2);
+  // Higher DPR for sharper rendering
+  const dpr = Math.min(devicePixelRatio, 3);
   W = innerWidth * dpr;
   H = innerHeight * dpr;
   canvas.width = W;
   canvas.height = H;
   canvas.style.width = innerWidth + 'px';
   canvas.style.height = innerHeight + 'px';
-  CX = W / 2;
-  CY = H / 2;
-  R = Math.min(W, H) * 0.28;
+  ctx.scale(dpr, dpr);
+  // Work in CSS pixels from here
+  CX = innerWidth / 2;
+  CY = innerHeight / 2;
+  R = Math.min(innerWidth, innerHeight) * 0.28;
 }
 resize();
-addEventListener('resize', resize);
+addEventListener('resize', () => { resize(); });
 
 // ═══════════════════════════════════════════════════════
-//  STATE CONFIG — Vivid, captivating, god-like palette
+//  STATE CONFIG — Dramatic, instantly recognizable
 // ═══════════════════════════════════════════════════════
 
 const STATES = {
   idle: {
-    // Electric Blue — omniscient presence, calm intelligence
-    coreColor: [0, 120, 255],
+    // Deep cosmic blue with electric accents — mysterious, waiting
+    coreColor: [0, 80, 220],
+    accentColor: [80, 180, 255],
     waveColors: [
-      [0, 140, 255, 0.7],
-      [30, 170, 255, 0.6],
-      [80, 200, 255, 0.5],
-      [140, 220, 255, 0.35],
+      [0, 100, 255, 0.65],
+      [20, 140, 255, 0.55],
+      [60, 180, 255, 0.45],
+      [120, 210, 255, 0.3],
     ],
-    glowColor: [0, 100, 255],
-    waveAmp: 0.04,
-    waveSpeed: 0.5,
+    glowColor: [0, 60, 200],
+    waveAmp: 0.035,
+    waveSpeed: 0.4,
     spikeAmp: 0,
-    rotSpeed: 0.08,
-    coreGlow: 0.7,
-    bloomSize: 1.6,
-    particleColor: [100, 180, 255],
-    breathe: 0.015,
+    coreGlow: 0.6,
+    bloomSize: 1.5,
+    particleColor: [80, 160, 255],
+    breathe: 0.012,
     ringCount: 0,
+    rotSpeed: 0.15, // majestic axial rotation — only in IDLE
   },
   listening: {
-    // Bright Emerald — engaged, absorbing, attentive
-    coreColor: [0, 255, 140],
+    // Vibrant green/teal — active, gathering inward
+    coreColor: [0, 230, 120],
+    accentColor: [0, 255, 200],
     waveColors: [
-      [0, 255, 160, 0.75],
-      [40, 255, 190, 0.65],
-      [80, 255, 210, 0.55],
-      [140, 255, 230, 0.4],
+      [0, 255, 150, 0.75],
+      [0, 240, 180, 0.65],
+      [20, 255, 210, 0.5],
+      [80, 255, 230, 0.35],
     ],
-    glowColor: [0, 240, 130],
-    waveAmp: 0.14,
-    waveSpeed: 0.9,
-    spikeAmp: 0.18,
-    rotSpeed: 0.22,
+    glowColor: [0, 200, 100],
+    waveAmp: 0.12,
+    waveSpeed: 0.85,
+    spikeAmp: 0.2,
     coreGlow: 0.8,
-    bloomSize: 1.8,
-    particleColor: [0, 255, 180],
-    breathe: 0.04,
+    bloomSize: 1.7,
+    particleColor: [0, 255, 170],
+    breathe: 0.035,
     ringCount: 0,
+    rotSpeed: 0,
   },
   processing: {
-    // Vivid Purple — deep computation, cosmic intelligence
-    coreColor: [180, 0, 255],
+    // Intense purple/magenta with gold highlights — computation
+    coreColor: [160, 0, 255],
+    accentColor: [255, 200, 40],
     waveColors: [
-      [190, 40, 255, 0.75],
-      [210, 90, 255, 0.65],
-      [230, 140, 255, 0.5],
-      [245, 180, 255, 0.35],
+      [180, 20, 255, 0.8],
+      [220, 60, 255, 0.65],
+      [255, 120, 255, 0.5],
+      [255, 200, 60, 0.35],
     ],
-    glowColor: [160, 0, 250],
+    glowColor: [140, 0, 230],
     waveAmp: 0.1,
-    waveSpeed: 1.8,
-    spikeAmp: 0.12,
-    rotSpeed: 0.7,
-    coreGlow: 0.85,
+    waveSpeed: 2.0,
+    spikeAmp: 0.14,
+    coreGlow: 0.9,
     bloomSize: 1.9,
-    particleColor: [210, 120, 255],
+    particleColor: [200, 100, 255],
     breathe: 0,
     ringCount: 3,
+    rotSpeed: 0,
   },
   speaking: {
-    // Bright Gold — authority, revelation, wisdom
-    coreColor: [255, 185, 0],
+    // Warm amber/orange with bright accents — authority
+    coreColor: [255, 160, 0],
+    accentColor: [255, 255, 120],
     waveColors: [
-      [255, 200, 40, 0.8],
-      [255, 220, 90, 0.7],
-      [255, 235, 140, 0.55],
-      [255, 245, 180, 0.4],
-      [255, 252, 220, 0.25],
+      [255, 180, 20, 0.85],
+      [255, 210, 60, 0.7],
+      [255, 230, 100, 0.55],
+      [255, 245, 160, 0.35],
     ],
-    glowColor: [255, 170, 0],
-    waveAmp: 0.25,
-    waveSpeed: 1.1,
-    spikeAmp: 0.4,
-    rotSpeed: 0.16,
+    glowColor: [255, 140, 0],
+    waveAmp: 0.22,
+    waveSpeed: 1.0,
+    spikeAmp: 0.35,
     coreGlow: 0.95,
     bloomSize: 2.0,
-    particleColor: [255, 210, 60],
+    particleColor: [255, 200, 40],
     breathe: 0,
     ringCount: 0,
+    rotSpeed: 0,
   },
 };
 
@@ -142,31 +147,34 @@ let state = 'idle';
 let energy = 0, energyTarget = 0;
 let t = 0;
 
-// Smoothed current values
 let cur = {
-  core: [0, 120, 255],
-  glow: [0, 100, 255],
-  waveAmp: 0.04,
-  waveSpeed: 0.5,
+  core: [0, 80, 220],
+  accent: [80, 180, 255],
+  glow: [0, 60, 200],
+  waveAmp: 0.035,
+  waveSpeed: 0.4,
   spikeAmp: 0,
-  rotSpeed: 0.08,
-  coreGlow: 0.7,
-  bloomSize: 1.6,
-  pc: [100, 180, 255],
-  breathe: 0.015,
+  coreGlow: 0.6,
+  bloomSize: 1.5,
+  pc: [80, 160, 255],
+  breathe: 0.012,
   ringCount: 0,
+  rotSpeed: 0.15,
 };
+
+// Accumulated rotation angle — drives IDLE axial rotation
+let rotAngle = 0;
 
 function lerp(a, b, t) { return a + (b - a) * t; }
 function lerpA(a, b, t) { return a.map((v, i) => lerp(v, b[i], t)); }
 
 function synthEnergy(t) {
-  return 0.05 + Math.sin(t*6.28)*0.035 + Math.sin(t*14.8)*0.02
-    + Math.sin(t*30.5)*0.01 + Math.random()*0.005;
+  return 0.05 + Math.sin(t * 6.28) * 0.035 + Math.sin(t * 14.8) * 0.02
+    + Math.sin(t * 30.5) * 0.01 + Math.random() * 0.005;
 }
 
 // ═══════════════════════════════════════════════════════
-//  WAVE LAYER CLASS — more harmonics, wider lines
+//  WAVE LAYERS — sharp, crisp, high definition
 // ═══════════════════════════════════════════════════════
 
 class WaveLayer {
@@ -177,23 +185,25 @@ class WaveLayer {
     this.freq = 2 + index * 1.1 + Math.random() * 0.6;
     this.phase = Math.random() * Math.PI * 2;
     this.speed = 0.7 + Math.random() * 0.7;
-    this.thickness = 1.8 + Math.random() * 1.8;
+    this.thickness = 1.0 + Math.random() * 1.2;
   }
 
-  draw(ctx, time, cx, cy, radius, amp, spikeAmp, color, alpha, speedMult) {
+  draw(ctx, time, cx, cy, radius, amp, spikeAmp, color, alpha, speedMult, rot) {
     const lat = this.yOffset * 0.85;
     const sliceRadius = radius * Math.cos(lat * Math.PI / 2);
     const sliceY = cy + lat * radius * 0.9;
-
     if (sliceRadius < 5) return;
 
     const totalAmp = amp + energy * 0.6 + spikeAmp * energy * 2.5;
 
+    // Per-layer rotation stagger: layers at different latitudes rotate at slightly different rates
+    const layerRot = rot * (1 + this.index * 0.02);
+
     ctx.beginPath();
-    const steps = 220;
+    const steps = 260;
     for (let i = 0; i <= steps; i++) {
       const pct = i / steps;
-      const angle = pct * Math.PI * 2;
+      const angle = pct * Math.PI * 2 + layerRot;
 
       const wave1 = Math.sin(angle * this.freq + time * this.speed * speedMult + this.phase) * totalAmp;
       const wave2 = Math.sin(angle * (this.freq * 1.7) - time * this.speed * speedMult * 1.3 + this.phase * 2) * totalAmp * 0.45;
@@ -201,7 +211,6 @@ class WaveLayer {
       const wave4 = Math.sin(angle * (this.freq * 5.3) - time * this.speed * speedMult * 3.1 + this.phase * 1.3) * totalAmp * 0.08;
 
       const wave = (wave1 + wave2 + wave3 + wave4) * radius;
-
       const r = sliceRadius + wave;
       const x = cx + Math.cos(angle) * r;
       const y = sliceY + Math.sin(angle) * r * 0.12;
@@ -211,16 +220,16 @@ class WaveLayer {
     }
     ctx.closePath();
 
-    ctx.strokeStyle = `rgba(${color[0]},${color[1]},${color[2]},${alpha * 0.85})`;
-    ctx.lineWidth = this.thickness * (1 + energy * 2.5);
-    ctx.shadowColor = `rgba(${color[0]},${color[1]},${color[2]},${alpha * 1.2})`;
-    ctx.shadowBlur = 20 + energy * 45;
+    // Sharp stroke — minimal blur for crisp edges
+    ctx.strokeStyle = `rgba(${color[0]},${color[1]},${color[2]},${Math.min(1, alpha * 0.9)})`;
+    ctx.lineWidth = this.thickness * (1 + energy * 1.5);
+    ctx.shadowColor = `rgba(${color[0]},${color[1]},${color[2]},${Math.min(1, alpha)})`;
+    ctx.shadowBlur = 6 + energy * 12;
     ctx.stroke();
     ctx.shadowBlur = 0;
   }
 }
 
-// More wave layers for denser, richer look
 const WAVE_COUNT = 36;
 const waveLayers = [];
 for (let i = 0; i < WAVE_COUNT; i++) {
@@ -228,29 +237,28 @@ for (let i = 0; i < WAVE_COUNT; i++) {
 }
 
 // ═══════════════════════════════════════════════════════
-//  PARTICLES — more, brighter, larger
+//  PARTICLES — crisp points with tight glow
 // ═══════════════════════════════════════════════════════
 
 class Particle {
-  constructor() {
-    this.reset();
-  }
+  constructor() { this.reset(); }
   reset() {
     const angle = Math.random() * Math.PI * 2;
     const dist = 1.05 + Math.random() * 1.4;
     this.x = Math.cos(angle) * dist;
     this.y = (Math.random() - 0.5) * 2 * dist * 0.6;
     this.z = Math.sin(angle) * dist;
-    this.size = 0.8 + Math.random() * 2.5;
+    this.size = 0.6 + Math.random() * 1.8;
     this.speed = 0.1 + Math.random() * 0.35;
-    this.alpha = 0.15 + Math.random() * 0.5;
+    this.alpha = 0.2 + Math.random() * 0.6;
     this.life = Math.random();
   }
-  update(dt) {
+  update(dt, rotDelta) {
     this.life += dt * this.speed * 0.1;
     if (this.life > 1) this.reset();
-    const angle = Math.atan2(this.z, this.x) + dt * this.speed * 0.3;
-    const dist = Math.sqrt(this.x*this.x + this.z*this.z);
+    // Base orbital drift + axial rotation from IDLE state
+    const angle = Math.atan2(this.z, this.x) + dt * this.speed * 0.3 + rotDelta;
+    const dist = Math.sqrt(this.x * this.x + this.z * this.z);
     this.x = Math.cos(angle) * dist;
     this.z = Math.sin(angle) * dist;
     this.y += Math.sin(this.life * 6) * dt * 0.02;
@@ -259,20 +267,166 @@ class Particle {
     const screenX = cx + this.x * radius;
     const screenY = cy + this.y * radius;
     const depth = (this.z + 1.5) / 3;
-    const a = this.alpha * depth * (0.6 + energy * 2);
-    const s = this.size * (0.6 + depth * 0.6);
+    const a = Math.min(1, this.alpha * depth * (0.6 + energy * 2));
+    const s = this.size * (0.5 + depth * 0.5);
 
     ctx.beginPath();
     ctx.arc(screenX, screenY, s, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(${color[0]},${color[1]},${color[2]},${a})`;
-    ctx.shadowColor = `rgba(${color[0]},${color[1]},${color[2]},${a})`;
-    ctx.shadowBlur = 12 + energy * 10;
+    ctx.shadowColor = `rgba(${color[0]},${color[1]},${color[2]},${a * 0.8})`;
+    ctx.shadowBlur = 4 + energy * 6;
     ctx.fill();
     ctx.shadowBlur = 0;
   }
 }
 
-const particles = Array.from({length: 200}, () => new Particle());
+const particles = Array.from({ length: 200 }, () => new Particle());
+
+// ═══════════════════════════════════════════════════════
+//  ORBITING LABELS — vendors once, then capabilities
+// ═══════════════════════════════════════════════════════
+
+const VENDORS = [
+  'Anthropic Claude', 'Deepgram', 'Telnyx', 'Salesforce',
+  'Google Calendar', 'Fellow', 'SalesLoft',
+];
+
+const CAPABILITIES = [
+  'Custom Wake Word', 'Low Latency STT', 'Voice Orchestration',
+  'CRM Context Sync', 'Proactive Alerts', 'Pattern Matching',
+  'Intelligent Routing', 'Multi-Integration', 'Real-Time Processing',
+  'Natural Responses',
+];
+
+// How many labels orbit at once
+const ORBIT_SLOTS = 5;
+const VENDOR_DISPLAY_TIME = 12; // seconds to show vendors before switching
+
+class OrbitLabel {
+  constructor(slotIndex) {
+    this.slot = slotIndex;
+    this.text = '';
+    this.opacity = 0;
+    this.targetOpacity = 0;
+    this.orbitRadius = 1.6 + slotIndex * 0.14;
+    this.orbitSpeed = 0.1 + slotIndex * 0.03;
+    this.orbitTilt = 0.25 + slotIndex * 0.12;
+    this.phaseOffset = (slotIndex / ORBIT_SLOTS) * Math.PI * 2;
+    this.fadeSpeed = 1.5;
+  }
+
+  setText(text) {
+    if (text === this.text) return;
+    this.targetOpacity = 0; // fade out first
+    this._pendingText = text;
+  }
+
+  update(dt) {
+    // Handle pending text swap at low opacity
+    if (this._pendingText !== undefined && this.opacity < 0.05) {
+      this.text = this._pendingText;
+      this._pendingText = undefined;
+      this.targetOpacity = 1;
+    }
+    // Smooth fade
+    this.opacity += (this.targetOpacity - this.opacity) * dt * this.fadeSpeed;
+    if (this.opacity < 0.01) this.opacity = 0;
+  }
+
+  draw(ctx, cx, cy, radius, time, coreColor) {
+    if (this.opacity < 0.01 || !this.text) return;
+
+    const angle = time * this.orbitSpeed + this.phaseOffset;
+    const orbitR = radius * this.orbitRadius;
+
+    // 3D orbital position
+    const x = cx + Math.cos(angle) * orbitR;
+    const baseY = cy + Math.sin(angle) * orbitR * this.orbitTilt;
+    const z = Math.sin(angle); // -1 to 1, behind to front
+
+    // Depth-based effects: higher floor so labels stay readable behind sphere
+    const depthAlpha = 0.55 + (z * 0.5 + 0.5) * 0.45;
+    const finalAlpha = this.opacity * depthAlpha * 0.9;
+    const scale = 0.9 + (z * 0.5 + 0.5) * 0.1;
+
+    if (finalAlpha < 0.02) return;
+
+    const fontSize = 18 * scale;
+    const displayText = this.text.toUpperCase();
+    ctx.font = `600 ${fontSize}px 'Outfit', sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Bright label color — push toward white for readability
+    const r = Math.min(255, coreColor[0] + 120);
+    const g = Math.min(255, coreColor[1] + 120);
+    const b = Math.min(255, coreColor[2] + 120);
+
+    // Subtle shimmer
+    const shimmer = 0.92 + Math.sin(time * 3 + this.slot * 1.7) * 0.08;
+    const a = finalAlpha * shimmer;
+
+    // Text outline stroke for contrast against any background
+    ctx.strokeStyle = `rgba(0,0,0,${a * 0.4})`;
+    ctx.lineWidth = 3;
+    ctx.strokeText(displayText, x, baseY);
+
+    // Strong glow pass
+    ctx.shadowColor = `rgba(${r},${g},${b},${a * 0.8})`;
+    ctx.shadowBlur = 14;
+    ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+    ctx.fillText(displayText, x, baseY);
+
+    // Second fill pass for extra brightness (no blur)
+    ctx.shadowBlur = 0;
+    ctx.fillText(displayText, x, baseY);
+  }
+}
+
+const orbitLabels = Array.from({ length: ORBIT_SLOTS }, (_, i) => new OrbitLabel(i));
+
+// Label cycling logic
+let labelPhase = 'vendors'; // 'vendors' or 'capabilities'
+let vendorIndex = 0;
+let capIndex = 0;
+let labelCycleTimer = 0;
+const LABEL_CYCLE_INTERVAL = 4; // seconds between swaps
+
+// Initialize with first batch of vendors
+for (let i = 0; i < ORBIT_SLOTS; i++) {
+  const vi = i % VENDORS.length;
+  orbitLabels[i].text = VENDORS[vi];
+  orbitLabels[i].opacity = 0;
+  orbitLabels[i].targetOpacity = 1;
+}
+vendorIndex = ORBIT_SLOTS;
+
+function cycleLabels(dt) {
+  labelCycleTimer += dt;
+
+  // Switch from vendors to capabilities after VENDOR_DISPLAY_TIME
+  if (labelPhase === 'vendors' && t > VENDOR_DISPLAY_TIME) {
+    labelPhase = 'capabilities';
+  }
+
+  if (labelCycleTimer < LABEL_CYCLE_INTERVAL) return;
+  labelCycleTimer = 0;
+
+  if (labelPhase === 'vendors') {
+    // Cycle through remaining vendors one slot at a time
+    if (vendorIndex < VENDORS.length) {
+      const slot = vendorIndex % ORBIT_SLOTS;
+      orbitLabels[slot].setText(VENDORS[vendorIndex]);
+      vendorIndex++;
+    }
+  } else {
+    // Capabilities: rotate one label at a time
+    const slot = capIndex % ORBIT_SLOTS;
+    const capText = CAPABILITIES[capIndex % CAPABILITIES.length];
+    orbitLabels[slot].setText(capText);
+    capIndex++;
+  }
+}
 
 // ═══════════════════════════════════════════════════════
 //  MAIN DRAW
@@ -281,90 +435,100 @@ const particles = Array.from({length: 200}, () => new Particle());
 function draw(timestamp) {
   requestAnimationFrame(draw);
 
-  const dt = 1/60;
+  const dt = 1 / 60;
   t += dt;
-  const sm = 0.03;
+
+  // Faster transition speed for dramatic state changes
+  const sm = 0.06;
 
   const tgt = STATES[state];
 
   // Smooth transitions
   cur.core = lerpA(cur.core, tgt.coreColor, sm);
+  cur.accent = lerpA(cur.accent, tgt.accentColor, sm);
   cur.glow = lerpA(cur.glow, tgt.glowColor, sm);
   cur.waveAmp = lerp(cur.waveAmp, tgt.waveAmp, sm);
   cur.waveSpeed = lerp(cur.waveSpeed, tgt.waveSpeed, sm);
   cur.spikeAmp = lerp(cur.spikeAmp, tgt.spikeAmp, sm);
-  cur.rotSpeed = lerp(cur.rotSpeed, tgt.rotSpeed, sm * 0.5);
   cur.coreGlow = lerp(cur.coreGlow, tgt.coreGlow + energy * 0.4, sm);
   cur.bloomSize = lerp(cur.bloomSize, tgt.bloomSize + energy * 0.6, sm);
   cur.pc = lerpA(cur.pc, tgt.particleColor, sm);
   cur.breathe = lerp(cur.breathe, tgt.breathe, sm);
   cur.ringCount = lerp(cur.ringCount, tgt.ringCount, sm);
+  cur.rotSpeed = lerp(cur.rotSpeed, tgt.rotSpeed, sm);
+
+  // Accumulate rotation — smooth ramp to zero when leaving IDLE
+  rotAngle += cur.rotSpeed * dt;
 
   // Energy
   if (state === 'speaking') energyTarget = synthEnergy(t);
   else if (state !== 'listening') energyTarget = 0;
   energy = lerp(energy, energyTarget, energyTarget > energy ? 0.22 : 0.04);
 
-  // Breathing pulse (strongest in listening)
   const breathPulse = Math.sin(t * 3) * cur.breathe;
 
-  // Clear
+  // Clear — reset transform for raw pixel clear
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, W, H);
+  ctx.restore();
 
   const cc = cur.core;
+  const ac = cur.accent;
   const cg = cur.coreGlow;
 
-  // ── OUTER HALO (very large, subtle) ──
+  // ── OUTER HALO ──
   const haloR = R * (cur.bloomSize + 0.8);
   const haloGrad = ctx.createRadialGradient(CX, CY, R * 0.8, CX, CY, haloR);
-  haloGrad.addColorStop(0, `rgba(${cur.glow[0]},${cur.glow[1]},${cur.glow[2]},${0.06 + energy * 0.08 + breathPulse})`);
-  haloGrad.addColorStop(0.5, `rgba(${cur.glow[0]},${cur.glow[1]},${cur.glow[2]},${0.02 + energy * 0.03})`);
+  haloGrad.addColorStop(0, `rgba(${cur.glow[0]},${cur.glow[1]},${cur.glow[2]},${0.05 + energy * 0.06 + breathPulse})`);
+  haloGrad.addColorStop(0.5, `rgba(${cur.glow[0]},${cur.glow[1]},${cur.glow[2]},${0.015 + energy * 0.02})`);
   haloGrad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = haloGrad;
-  ctx.fillRect(0, 0, W, H);
+  ctx.fillRect(CX - haloR, CY - haloR, haloR * 2, haloR * 2);
 
-  // ── AMBIENT GLOW (inner bloom) ──
+  // ── AMBIENT GLOW (tighter, less blur) ──
   const ambR = R * cur.bloomSize;
   const ambGrad = ctx.createRadialGradient(CX, CY, 0, CX, CY, ambR);
-  ambGrad.addColorStop(0, `rgba(${cur.glow[0]},${cur.glow[1]},${cur.glow[2]},${0.2 + energy * 0.2 + breathPulse * 2})`);
-  ambGrad.addColorStop(0.35, `rgba(${cur.glow[0]},${cur.glow[1]},${cur.glow[2]},${0.08 + energy * 0.1})`);
-  ambGrad.addColorStop(0.7, `rgba(${cur.glow[0]},${cur.glow[1]},${cur.glow[2]},${0.02 + energy * 0.04})`);
+  ambGrad.addColorStop(0, `rgba(${cur.glow[0]},${cur.glow[1]},${cur.glow[2]},${0.18 + energy * 0.15 + breathPulse * 2})`);
+  ambGrad.addColorStop(0.3, `rgba(${cur.glow[0]},${cur.glow[1]},${cur.glow[2]},${0.06 + energy * 0.08})`);
+  ambGrad.addColorStop(0.65, `rgba(${cur.glow[0]},${cur.glow[1]},${cur.glow[2]},${0.015 + energy * 0.03})`);
   ambGrad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = ambGrad;
-  ctx.fillRect(0, 0, W, H);
+  ctx.fillRect(CX - ambR, CY - ambR, ambR * 2, ambR * 2);
 
-  // ── CORE ORB (brighter, more vivid) ──
+  // ── CORE ORB ──
   const coreGrad = ctx.createRadialGradient(
-    CX - R * 0.12, CY - R * 0.12, R * 0.02,
-    CX, CY, R * 0.95
+    CX - R * 0.1, CY - R * 0.1, R * 0.02,
+    CX, CY, R * 0.9
   );
-  coreGrad.addColorStop(0, `rgba(${Math.min(255,cc[0]+120)},${Math.min(255,cc[1]+120)},${Math.min(255,cc[2]+120)},${0.25 + cg * 0.35 + breathPulse * 3})`);
-  coreGrad.addColorStop(0.25, `rgba(${cc[0]},${cc[1]},${cc[2]},${0.15 + cg * 0.2})`);
-  coreGrad.addColorStop(0.6, `rgba(${Math.floor(cc[0]*0.6)},${Math.floor(cc[1]*0.6)},${Math.floor(cc[2]*0.6)},${0.08 + cg * 0.12})`);
+  coreGrad.addColorStop(0, `rgba(${Math.min(255, cc[0] + 140)},${Math.min(255, cc[1] + 140)},${Math.min(255, cc[2] + 140)},${0.3 + cg * 0.35 + breathPulse * 3})`);
+  coreGrad.addColorStop(0.2, `rgba(${cc[0]},${cc[1]},${cc[2]},${0.15 + cg * 0.2})`);
+  coreGrad.addColorStop(0.55, `rgba(${cc[0] >> 1},${cc[1] >> 1},${cc[2] >> 1},${0.06 + cg * 0.1})`);
   coreGrad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = coreGrad;
   ctx.beginPath();
-  ctx.arc(CX, CY, R * 1.05, 0, Math.PI * 2);
+  ctx.arc(CX, CY, R, 0, Math.PI * 2);
   ctx.fill();
 
-  // ── ENERGY RINGS (during processing) ──
+  // ── ENERGY RINGS (processing) ──
   if (cur.ringCount > 0.3) {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     const rings = Math.round(cur.ringCount);
-    for (let r = 1; r <= rings; r++) {
-      const ringPhase = t * (1.5 + r * 0.5);
+    for (let ri = 1; ri <= rings; ri++) {
+      const ringPhase = t * (1.5 + ri * 0.5);
       const ringExpand = (Math.sin(ringPhase) * 0.5 + 0.5);
-      const ringR = R * (1.05 + ringExpand * 0.35 * r);
-      const ringAlpha = (1 - ringExpand) * 0.25 * (cur.ringCount / 3);
+      const ringR = R * (1.05 + ringExpand * 0.35 * ri);
+      const ringAlpha = (1 - ringExpand) * 0.3 * (cur.ringCount / 3);
 
       ctx.beginPath();
       ctx.arc(CX, CY, ringR, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(${cc[0]},${cc[1]},${cc[2]},${ringAlpha})`;
-      ctx.lineWidth = 1.5;
-      ctx.shadowColor = `rgba(${cc[0]},${cc[1]},${cc[2]},${ringAlpha * 2})`;
-      ctx.shadowBlur = 20;
+      // Use accent color (gold) for processing rings
+      ctx.strokeStyle = `rgba(${ac[0]},${ac[1]},${ac[2]},${ringAlpha})`;
+      ctx.lineWidth = 1.2;
+      ctx.shadowColor = `rgba(${ac[0]},${ac[1]},${ac[2]},${ringAlpha})`;
+      ctx.shadowBlur = 10;
       ctx.stroke();
       ctx.shadowBlur = 0;
     }
@@ -383,10 +547,10 @@ function draw(timestamp) {
     const color = [wc[0], wc[1], wc[2]];
     const alpha = wc[3] * (0.6 + energy * 1.8 + breathPulse * 4);
 
-    layer.draw(ctx, t, CX, CY, R, cur.waveAmp + breathPulse, cur.spikeAmp, color, alpha, cur.waveSpeed);
+    layer.draw(ctx, t, CX, CY, R, cur.waveAmp + breathPulse, cur.spikeAmp, color, alpha, cur.waveSpeed, rotAngle);
   });
 
-  // ── EQUATORIAL BAND (bright accent ring) ──
+  // ── EQUATORIAL BAND ──
   if (energy > 0.005) {
     const bandAlpha = energy * 0.8;
     ctx.beginPath();
@@ -403,31 +567,50 @@ function draw(timestamp) {
       if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
     ctx.closePath();
-    ctx.strokeStyle = `rgba(255,255,255,${bandAlpha * 0.5})`;
-    ctx.lineWidth = 2.5 + energy * 5;
-    ctx.shadowColor = `rgba(${cc[0]},${cc[1]},${cc[2]},${bandAlpha})`;
-    ctx.shadowBlur = 35 + energy * 50;
+    ctx.strokeStyle = `rgba(255,255,255,${bandAlpha * 0.4})`;
+    ctx.lineWidth = 1.5 + energy * 3;
+    ctx.shadowColor = `rgba(${cc[0]},${cc[1]},${cc[2]},${bandAlpha * 0.8})`;
+    ctx.shadowBlur = 12 + energy * 20;
     ctx.stroke();
     ctx.shadowBlur = 0;
   }
 
   // ── PARTICLES ──
+  const rotDelta = cur.rotSpeed * dt;
   particles.forEach(p => {
-    p.update(dt);
+    p.update(dt, rotDelta);
     p.draw(ctx, CX, CY, R, cur.pc);
   });
 
   ctx.restore();
 
-  // ── EDGE HIGHLIGHT (vivid rim) ──
+  // ── EDGE HIGHLIGHT ──
   ctx.beginPath();
   ctx.arc(CX, CY, R * 0.98, 0, Math.PI * 2);
-  ctx.strokeStyle = `rgba(${cc[0]},${cc[1]},${cc[2]},${0.08 + energy * 0.12 + breathPulse * 2})`;
-  ctx.lineWidth = 1.5;
-  ctx.shadowColor = `rgba(${Math.min(255,cc[0]+100)},${Math.min(255,cc[1]+100)},${Math.min(255,cc[2]+100)},${0.5})`;
-  ctx.shadowBlur = 15 + energy * 25;
+  ctx.strokeStyle = `rgba(${cc[0]},${cc[1]},${cc[2]},${0.06 + energy * 0.1 + breathPulse * 2})`;
+  ctx.lineWidth = 1;
+  ctx.shadowColor = `rgba(${Math.min(255, cc[0] + 100)},${Math.min(255, cc[1] + 100)},${Math.min(255, cc[2] + 100)},0.4)`;
+  ctx.shadowBlur = 8 + energy * 12;
   ctx.stroke();
   ctx.shadowBlur = 0;
+
+  // ── ACCENT RIM (secondary color highlight) ──
+  const rimPulse = Math.sin(t * 2.5) * 0.03 + 0.03;
+  ctx.beginPath();
+  ctx.arc(CX, CY, R * 1.01, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(${ac[0]},${ac[1]},${ac[2]},${rimPulse + energy * 0.08})`;
+  ctx.lineWidth = 0.8;
+  ctx.shadowColor = `rgba(${ac[0]},${ac[1]},${ac[2]},${rimPulse * 2})`;
+  ctx.shadowBlur = 10;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // ── ORBITING LABELS ──
+  cycleLabels(dt);
+  orbitLabels.forEach(lbl => {
+    lbl.update(dt);
+    lbl.draw(ctx, CX, CY, R, t, cur.core);
+  });
 }
 
 requestAnimationFrame(draw);
@@ -439,10 +622,10 @@ requestAnimationFrame(draw);
 const stateLabel = document.getElementById('stateLabel');
 const txBox = document.getElementById('transcript');
 const labelColors = {
-  idle:       'rgba(0,140,255,0.7)',
-  listening:  'rgba(0,255,160,0.8)',
-  processing: 'rgba(190,60,255,0.8)',
-  speaking:   'rgba(255,200,0,0.85)',
+  idle:       'rgba(0,120,255,0.75)',
+  listening:  'rgba(0,255,160,0.85)',
+  processing: 'rgba(190,60,255,0.85)',
+  speaking:   'rgba(255,180,0,0.9)',
 };
 
 function setState(s) {
@@ -467,7 +650,7 @@ function startLE() {
   let ph = 0;
   lTimer = setInterval(() => {
     ph += 0.14;
-    energyTarget = 0.03 + Math.sin(ph)*0.025 + Math.sin(ph*2.7)*0.015 + Math.random()*0.008;
+    energyTarget = 0.03 + Math.sin(ph) * 0.025 + Math.sin(ph * 2.7) * 0.015 + Math.random() * 0.008;
   }, 50);
 }
 function stopLE() { clearInterval(lTimer); lTimer = null; energyTarget = 0; }
@@ -512,7 +695,7 @@ async function runDemo() {
 window.runDemo = runDemo;
 
 // ═══════════════════════════════════════════════════════
-//  LIVE WEBSOCKET (connects to bridge if running)
+//  LIVE WEBSOCKET
 // ═══════════════════════════════════════════════════════
 let _ws = null;
 (function tryWS() {
@@ -526,16 +709,14 @@ let _ws = null;
     };
     ws.onmessage = e => {
       const m = JSON.parse(e.data);
-      if (m.type==='state') setState(map[m.state]||'idle');
-      if (m.type==='snapshot') {
-        setState(map[m.state]||'idle');
-      }
-      if (m.type==='energy') energyTarget = m.rms * 2.5;
-      if (m.type==='transcript') showTx(m.speaker, m.text);
+      if (m.type === 'state') setState(map[m.state] || 'idle');
+      if (m.type === 'snapshot') setState(map[m.state] || 'idle');
+      if (m.type === 'energy') energyTarget = m.rms * 2.5;
+      if (m.type === 'transcript') showTx(m.speaker, m.text);
     };
     ws.onclose = () => { _ws = null; setTimeout(tryWS, 3000); };
     ws.onerror = () => {};
-  } catch(e) {}
+  } catch (e) {}
 })();
 </script>
 </body>
