@@ -18,13 +18,17 @@ import { getConversationContext } from "./context/conversation-context.js";
 import { queryCache } from './intelligence/query-cache.js';
 import { morningBriefing } from './intelligence/morning-briefing.js';
 import { priorityEngine } from './intelligence/priorities.js';
-import { exec } from 'child_process';
+import { spawn, exec } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import makeLogger from './utils/logger.js';
 import speechLogger from "./utils/speech-logger.js";
 import bridge from './visual-cortex-bridge.js';
 
 const log = makeLogger('Main');
 const sm = getStateMachine();
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = join(__dirname, '..');
 
 // ── Component Instances ──
 const pipeline = new VoicePipeline();
@@ -32,6 +36,9 @@ const memory = new MemoryAgent();
 const integrations = new IntegrationManager();
 const brain = getBrainConnector();
 const convContext = getConversationContext();
+
+// ── Child processes ──
+let brainProcess = null;
 
 // ── Track current conversation ──
 let conversationActive = false;
@@ -1614,6 +1621,11 @@ async function shutdown() {
   await pipeline.stop();
   await brain.disconnect();
   bridge.stop();
+  if (brainProcess) {
+    brainProcess.kill();
+    brainProcess = null;
+    log.info('[Brain] Process stopped');
+  }
   log.info('Razor shutdown complete');
   process.exit(0);
 }
@@ -1641,12 +1653,41 @@ async function main() {
     log.error('Unhandled rejection:', err);
   });
 
-  // ── 1. Voice pipeline ──
-  log.info('[1/4] Initializing voice pipeline...');
+  // ── 1. Brain service (Python/FastAPI) ──
+  log.info('[1/5] Starting brain service...');
+  try {
+    brainProcess = spawn('python3', ['-m', 'razor_brain.server'], {
+      cwd: join(PROJECT_ROOT, 'brain'),
+      stdio: 'inherit',
+    });
+    brainProcess.on('error', (err) => {
+      log.error('[Brain] Failed to start:', err.message);
+      brainProcess = null;
+    });
+    brainProcess.on('exit', (code) => {
+      if (code !== null && code !== 0) log.warn(`[Brain] Process exited with code ${code}`);
+      brainProcess = null;
+    });
+
+    // Wait for brain to boot, then health-check
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    try {
+      const res = await fetch('http://127.0.0.1:8780/health', { signal: AbortSignal.timeout(2000) });
+      if (res.ok) log.info('[Brain] Health check passed ✓');
+      else log.warn(`[Brain] Health check returned ${res.status} — continuing anyway`);
+    } catch {
+      log.warn('[Brain] Health check unreachable — brain may still be starting');
+    }
+  } catch (err) {
+    log.warn('[Brain] Could not spawn brain process:', err.message);
+  }
+
+  // ── 2. Voice pipeline ──
+  log.info('[2/5] Initializing voice pipeline...');
   await pipeline.init();
 
-  // ── 2. Brain (non-blocking — works offline) ──
-  log.info('[2/4] Connecting to brain server...');
+  // ── 3. Brain connector (WebSocket) ──
+  log.info('[3/5] Connecting to brain server...');
   try {
     await Promise.race([
       brain.connect(),
@@ -1657,8 +1698,8 @@ async function main() {
     log.warn('Brain server not available — starting in offline mode');
   }
 
-  // ── 3. Integrations (non-blocking) ──
-  log.info('[3/4] Initializing integrations...');
+  // ── 4. Integrations (non-blocking) ──
+  log.info('[4/5] Initializing integrations...');
   try {
     const live = await integrations.initialize();
     log.info(`Integrations: ${live.length ? live.join(', ') : '(none configured)'}`);
@@ -1687,7 +1728,7 @@ async function main() {
   }
 
   // ── 4. Wire events and start ──
-  log.info('[4/4] Starting pipeline...');
+  log.info('[5/5] Starting pipeline...');
 
   pipeline.on('command', handleCommand);
 
