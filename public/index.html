@@ -3,38 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAZOR</title>
+<title>Visual Cortex</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;600;800&display=swap');
   *{margin:0;padding:0;box-sizing:border-box}
   body{background:#000;overflow:hidden;font-family:'Outfit',sans-serif;display:flex;align-items:center;justify-content:center;width:100vw;height:100vh}
   canvas{position:fixed;top:0;left:0}
 
-  .brand{position:fixed;top:36px;width:100%;text-align:center;font-size:15px;font-weight:800;letter-spacing:16px;color:rgba(255,255,255,0.04);z-index:10;pointer-events:none}
+  #stateLabel{position:fixed;bottom:60px;width:100%;text-align:center;font-size:28px;font-weight:300;letter-spacing:14px;z-index:10;pointer-events:none;transition:color 1.2s, text-shadow 1.2s;text-shadow:0 0 30px currentColor,0 0 60px currentColor}
 
-  #stateLabel{position:fixed;bottom:158px;width:100%;text-align:center;font-size:11px;font-weight:600;letter-spacing:8px;color:rgba(255,255,255,0.15);z-index:10;pointer-events:none;transition:color 0.8s}
-
-  #transcript{position:fixed;bottom:65px;width:100%;text-align:center;z-index:10;pointer-events:none;opacity:0;transition:opacity 0.5s}
+  #transcript{position:fixed;bottom:120px;width:100%;text-align:center;z-index:10;pointer-events:none;opacity:0;transition:opacity 0.5s}
   #transcript.show{opacity:1}
   .tx-who{font-size:9px;font-weight:700;letter-spacing:5px;text-transform:uppercase;margin-bottom:5px}
   .tx-text{font-size:16px;font-weight:200;line-height:1.7;color:rgba(255,255,255,0.6);max-width:540px;margin:0 auto;padding:0 20px}
-
-
-  .tech-label{position:fixed;font-size:8px;font-weight:600;letter-spacing:3px;text-transform:uppercase;padding:3px 8px;border-radius:3px;pointer-events:none;z-index:5;white-space:nowrap;transition:opacity 0.3s}
 </style>
 </head>
 <body>
 
 <canvas id="c"></canvas>
-<div class="brand">R A Z O R</div>
 <div id="stateLabel">IDLE</div>
 <div id="transcript"><div class="tx-who" id="txWho"></div><div class="tx-text" id="txText"></div></div>
 
 <script>
 // ═══════════════════════════════════════════════════════════════
-//  RAZOR SPHERE — Canvas 2D Flowing Wave Visualization
-//  Approach: Layered luminous waves with additive blending
-//  Guaranteed to work on every browser — no WebGL shaders
+//  SPHERE — Canvas 2D Flowing Wave Visualization
+//  Layered luminous waves with additive blending
 // ═══════════════════════════════════════════════════════════════
 
 const canvas = document.getElementById('c');
@@ -52,86 +45,96 @@ function resize() {
   canvas.style.height = innerHeight + 'px';
   CX = W / 2;
   CY = H / 2;
-  R = Math.min(W, H) * 0.28; // Sphere radius
+  R = Math.min(W, H) * 0.28;
 }
 resize();
 addEventListener('resize', resize);
 
 // ═══════════════════════════════════════════════════════
-//  STATE CONFIG
+//  STATE CONFIG — Vivid, captivating, god-like palette
 // ═══════════════════════════════════════════════════════
 
 const STATES = {
   idle: {
-    // Electric Blue — all-knowing presence
-    coreColor: [0, 102, 255],
+    // Electric Blue — omniscient presence, calm intelligence
+    coreColor: [0, 120, 255],
     waveColors: [
-      [0, 120, 255, 0.55],
-      [50, 150, 255, 0.45],
-      [100, 180, 255, 0.35],
+      [0, 140, 255, 0.7],
+      [30, 170, 255, 0.6],
+      [80, 200, 255, 0.5],
+      [140, 220, 255, 0.35],
     ],
-    glowColor: [0, 90, 255],
-    waveAmp: 0.03,
-    waveSpeed: 0.4,
+    glowColor: [0, 100, 255],
+    waveAmp: 0.04,
+    waveSpeed: 0.5,
     spikeAmp: 0,
     rotSpeed: 0.08,
-    coreGlow: 0.5,
-    bloomSize: 1.4,
-    particleColor: [80, 160, 255],
+    coreGlow: 0.7,
+    bloomSize: 1.6,
+    particleColor: [100, 180, 255],
+    breathe: 0.015,
+    ringCount: 0,
   },
   listening: {
-    // Bright Emerald — active attention
-    coreColor: [0, 255, 136],
+    // Bright Emerald — engaged, absorbing, attentive
+    coreColor: [0, 255, 140],
     waveColors: [
-      [0, 255, 150, 0.6],
-      [50, 255, 180, 0.5],
-      [100, 255, 200, 0.4],
-      [150, 255, 220, 0.3],
+      [0, 255, 160, 0.75],
+      [40, 255, 190, 0.65],
+      [80, 255, 210, 0.55],
+      [140, 255, 230, 0.4],
     ],
-    glowColor: [0, 230, 120],
-    waveAmp: 0.12,
-    waveSpeed: 0.8,
-    spikeAmp: 0.15,
-    rotSpeed: 0.2,
-    coreGlow: 0.65,
-    bloomSize: 1.6,
-    particleColor: [0, 255, 170],
-  },
-  processing: {
-    // Vivid Purple — AI intelligence
-    coreColor: [170, 0, 255],
-    waveColors: [
-      [180, 30, 255, 0.6],
-      [200, 80, 255, 0.5],
-      [220, 120, 255, 0.4],
-    ],
-    glowColor: [150, 0, 240],
-    waveAmp: 0.08,
-    waveSpeed: 1.5,
-    spikeAmp: 0.1,
-    rotSpeed: 0.6,
-    coreGlow: 0.65,
-    bloomSize: 1.6,
-    particleColor: [200, 100, 255],
-  },
-  speaking: {
-    // Bright Gold — wisdom delivery
-    coreColor: [255, 176, 0],
-    waveColors: [
-      [255, 190, 30, 0.65],
-      [255, 210, 80, 0.55],
-      [255, 225, 120, 0.45],
-      [255, 240, 160, 0.35],
-      [255, 250, 200, 0.2],
-    ],
-    glowColor: [255, 160, 0],
-    waveAmp: 0.22,
-    waveSpeed: 1.0,
-    spikeAmp: 0.35,
-    rotSpeed: 0.15,
+    glowColor: [0, 240, 130],
+    waveAmp: 0.14,
+    waveSpeed: 0.9,
+    spikeAmp: 0.18,
+    rotSpeed: 0.22,
     coreGlow: 0.8,
     bloomSize: 1.8,
-    particleColor: [255, 200, 50],
+    particleColor: [0, 255, 180],
+    breathe: 0.04,
+    ringCount: 0,
+  },
+  processing: {
+    // Vivid Purple — deep computation, cosmic intelligence
+    coreColor: [180, 0, 255],
+    waveColors: [
+      [190, 40, 255, 0.75],
+      [210, 90, 255, 0.65],
+      [230, 140, 255, 0.5],
+      [245, 180, 255, 0.35],
+    ],
+    glowColor: [160, 0, 250],
+    waveAmp: 0.1,
+    waveSpeed: 1.8,
+    spikeAmp: 0.12,
+    rotSpeed: 0.7,
+    coreGlow: 0.85,
+    bloomSize: 1.9,
+    particleColor: [210, 120, 255],
+    breathe: 0,
+    ringCount: 3,
+  },
+  speaking: {
+    // Bright Gold — authority, revelation, wisdom
+    coreColor: [255, 185, 0],
+    waveColors: [
+      [255, 200, 40, 0.8],
+      [255, 220, 90, 0.7],
+      [255, 235, 140, 0.55],
+      [255, 245, 180, 0.4],
+      [255, 252, 220, 0.25],
+    ],
+    glowColor: [255, 170, 0],
+    waveAmp: 0.25,
+    waveSpeed: 1.1,
+    spikeAmp: 0.4,
+    rotSpeed: 0.16,
+    coreGlow: 0.95,
+    bloomSize: 2.0,
+    particleColor: [255, 210, 60],
+    breathe: 0,
+    ringCount: 0,
   },
 };
 
@@ -141,15 +144,17 @@ let t = 0;
 
 // Smoothed current values
 let cur = {
-  core: [30, 50, 180],
-  glow: [30, 60, 200],
-  waveAmp: 0.03,
-  waveSpeed: 0.4,
+  core: [0, 120, 255],
+  glow: [0, 100, 255],
+  waveAmp: 0.04,
+  waveSpeed: 0.5,
   spikeAmp: 0,
   rotSpeed: 0.08,
-  coreGlow: 0.3,
-  bloomSize: 1.3,
-  pc: [60, 100, 255],
+  coreGlow: 0.7,
+  bloomSize: 1.6,
+  pc: [100, 180, 255],
+  breathe: 0.015,
+  ringCount: 0,
 };
 
 function lerp(a, b, t) { return a + (b - a) * t; }
@@ -161,71 +166,69 @@ function synthEnergy(t) {
 }
 
 // ═══════════════════════════════════════════════════════
-//  WAVE LAYER CLASS
+//  WAVE LAYER CLASS — more harmonics, wider lines
 // ═══════════════════════════════════════════════════════
 
 class WaveLayer {
   constructor(index, total) {
     this.index = index;
     this.total = total;
-    this.yOffset = (index / total - 0.5) * 2; // -1 to 1
-    this.freq = 2 + index * 1.3 + Math.random() * 0.5;
+    this.yOffset = (index / total - 0.5) * 2;
+    this.freq = 2 + index * 1.1 + Math.random() * 0.6;
     this.phase = Math.random() * Math.PI * 2;
-    this.speed = 0.8 + Math.random() * 0.6;
-    this.thickness = 1.5 + Math.random() * 1.5;
+    this.speed = 0.7 + Math.random() * 0.7;
+    this.thickness = 1.8 + Math.random() * 1.8;
   }
 
   draw(ctx, time, cx, cy, radius, amp, spikeAmp, color, alpha, speedMult) {
-    const y0 = this.yOffset;
-    // This layer sits at a latitude on the sphere
-    const lat = y0 * 0.85; // don't go to poles
+    const lat = this.yOffset * 0.85;
     const sliceRadius = radius * Math.cos(lat * Math.PI / 2);
     const sliceY = cy + lat * radius * 0.9;
 
     if (sliceRadius < 5) return;
 
-    const totalAmp = amp + energy * 0.5 + spikeAmp * energy * 2;
+    const totalAmp = amp + energy * 0.6 + spikeAmp * energy * 2.5;
 
     ctx.beginPath();
-    const steps = 200;
+    const steps = 220;
     for (let i = 0; i <= steps; i++) {
       const pct = i / steps;
       const angle = pct * Math.PI * 2;
 
-      // Base wave
       const wave1 = Math.sin(angle * this.freq + time * this.speed * speedMult + this.phase) * totalAmp;
-      const wave2 = Math.sin(angle * (this.freq * 1.7) - time * this.speed * speedMult * 1.3 + this.phase * 2) * totalAmp * 0.4;
-      const wave3 = Math.sin(angle * (this.freq * 3.1) + time * this.speed * speedMult * 2 + this.phase * 0.7) * totalAmp * 0.15;
+      const wave2 = Math.sin(angle * (this.freq * 1.7) - time * this.speed * speedMult * 1.3 + this.phase * 2) * totalAmp * 0.45;
+      const wave3 = Math.sin(angle * (this.freq * 3.1) + time * this.speed * speedMult * 2 + this.phase * 0.7) * totalAmp * 0.2;
+      const wave4 = Math.sin(angle * (this.freq * 5.3) - time * this.speed * speedMult * 3.1 + this.phase * 1.3) * totalAmp * 0.08;
 
-      const wave = (wave1 + wave2 + wave3) * radius;
+      const wave = (wave1 + wave2 + wave3 + wave4) * radius;
 
       const r = sliceRadius + wave;
       const x = cx + Math.cos(angle) * r;
-      const y = sliceY + Math.sin(angle) * r * 0.12; // Flatten for 3D perspective
+      const y = sliceY + Math.sin(angle) * r * 0.12;
 
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     }
     ctx.closePath();
 
-    ctx.strokeStyle = `rgba(${color[0]},${color[1]},${color[2]},${alpha * 0.7})`;
-    ctx.lineWidth = this.thickness * (1 + energy * 2);
-    ctx.shadowColor = `rgba(${color[0]},${color[1]},${color[2]},${alpha})`;
-    ctx.shadowBlur = 15 + energy * 30;
+    ctx.strokeStyle = `rgba(${color[0]},${color[1]},${color[2]},${alpha * 0.85})`;
+    ctx.lineWidth = this.thickness * (1 + energy * 2.5);
+    ctx.shadowColor = `rgba(${color[0]},${color[1]},${color[2]},${alpha * 1.2})`;
+    ctx.shadowBlur = 20 + energy * 45;
     ctx.stroke();
     ctx.shadowBlur = 0;
   }
 }
 
-// Create wave layers
-const WAVE_COUNT = 28;
+// More wave layers for denser, richer look
+const WAVE_COUNT = 36;
 const waveLayers = [];
 for (let i = 0; i < WAVE_COUNT; i++) {
   waveLayers.push(new WaveLayer(i, WAVE_COUNT));
 }
 
 // ═══════════════════════════════════════════════════════
-//  PARTICLES
+//  PARTICLES — more, brighter, larger
 // ═══════════════════════════════════════════════════════
 
 class Particle {
@@ -234,19 +237,18 @@ class Particle {
   }
   reset() {
     const angle = Math.random() * Math.PI * 2;
-    const dist = 1.1 + Math.random() * 1.2;
+    const dist = 1.05 + Math.random() * 1.4;
     this.x = Math.cos(angle) * dist;
     this.y = (Math.random() - 0.5) * 2 * dist * 0.6;
     this.z = Math.sin(angle) * dist;
-    this.size = 0.5 + Math.random() * 2;
-    this.speed = 0.1 + Math.random() * 0.3;
-    this.alpha = 0.1 + Math.random() * 0.4;
+    this.size = 0.8 + Math.random() * 2.5;
+    this.speed = 0.1 + Math.random() * 0.35;
+    this.alpha = 0.15 + Math.random() * 0.5;
     this.life = Math.random();
   }
   update(dt) {
     this.life += dt * this.speed * 0.1;
     if (this.life > 1) this.reset();
-    // Orbit
     const angle = Math.atan2(this.z, this.x) + dt * this.speed * 0.3;
     const dist = Math.sqrt(this.x*this.x + this.z*this.z);
     this.x = Math.cos(angle) * dist;
@@ -256,61 +258,21 @@ class Particle {
   draw(ctx, cx, cy, radius, color) {
     const screenX = cx + this.x * radius;
     const screenY = cy + this.y * radius;
-    const depth = (this.z + 1.5) / 3; // 0=far, 1=near
-    const a = this.alpha * depth * (0.5 + energy * 1.5);
-    const s = this.size * (0.5 + depth * 0.5);
+    const depth = (this.z + 1.5) / 3;
+    const a = this.alpha * depth * (0.6 + energy * 2);
+    const s = this.size * (0.6 + depth * 0.6);
 
     ctx.beginPath();
     ctx.arc(screenX, screenY, s, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(${color[0]},${color[1]},${color[2]},${a})`;
-    ctx.shadowColor = `rgba(${color[0]},${color[1]},${color[2]},${a * 0.8})`;
-    ctx.shadowBlur = 8;
+    ctx.shadowColor = `rgba(${color[0]},${color[1]},${color[2]},${a})`;
+    ctx.shadowBlur = 12 + energy * 10;
     ctx.fill();
     ctx.shadowBlur = 0;
   }
 }
 
-const particles = Array.from({length: 120}, () => new Particle());
-
-// ═══════════════════════════════════════════════════════
-//  TECH LABELS
-// ═══════════════════════════════════════════════════════
-
-const TECHS = [
-  { name: 'DEEPGRAM · STT', angle: 0, r: 1.55, speed: 0.10, color: '#64FFDA' },
-  { name: 'TELNYX · TTS', angle: 1.05, r: 1.45, speed: 0.08, color: '#CE93D8' },
-  { name: 'PICOVOICE · WAKE', angle: 2.1, r: 1.6, speed: 0.12, color: '#FFD54F' },
-  { name: 'CLAUDE · BRAIN', angle: 3.14, r: 1.5, speed: 0.09, color: '#FF8A65' },
-  { name: 'SALESFORCE · CRM', angle: 4.2, r: 1.55, speed: 0.11, color: '#4FC3F7' },
-  { name: 'SALESLOFT · SEQ', angle: 5.25, r: 1.45, speed: 0.13, color: '#81C784' },
-];
-
-// Create tech label DOM elements
-const techEls = TECHS.map(tech => {
-  const el = document.createElement('div');
-  el.className = 'tech-label';
-  el.textContent = tech.name;
-  el.style.color = tech.color;
-  el.style.borderColor = tech.color + '15';
-  el.style.background = tech.color + '08';
-  el.style.border = `1px solid ${tech.color}18`;
-  document.body.appendChild(el);
-  return el;
-});
-
-function updateTechLabels(time) {
-  const screenR = R / (Math.min(devicePixelRatio, 2)); // Convert back to CSS pixels
-  TECHS.forEach((tech, i) => {
-    const a = tech.angle + time * tech.speed;
-    const x = innerWidth/2 + Math.cos(a) * tech.r * screenR;
-    const y = innerHeight/2 + Math.sin(a) * tech.r * screenR * 0.32;
-    const depth = Math.sin(a) * 0.5 + 0.5;
-    techEls[i].style.left = (x - 40) + 'px';
-    techEls[i].style.top = (y - 8) + 'px';
-    techEls[i].style.opacity = (0.15 + depth * 0.55).toFixed(2);
-    techEls[i].style.fontSize = (7 + depth * 2) + 'px';
-  });
-}
+const particles = Array.from({length: 200}, () => new Particle());
 
 // ═══════════════════════════════════════════════════════
 //  MAIN DRAW
@@ -321,7 +283,7 @@ function draw(timestamp) {
 
   const dt = 1/60;
   t += dt;
-  const sm = 0.025;
+  const sm = 0.03;
 
   const tgt = STATES[state];
 
@@ -332,84 +294,119 @@ function draw(timestamp) {
   cur.waveSpeed = lerp(cur.waveSpeed, tgt.waveSpeed, sm);
   cur.spikeAmp = lerp(cur.spikeAmp, tgt.spikeAmp, sm);
   cur.rotSpeed = lerp(cur.rotSpeed, tgt.rotSpeed, sm * 0.5);
-  cur.coreGlow = lerp(cur.coreGlow, tgt.coreGlow + energy * 0.3, sm);
-  cur.bloomSize = lerp(cur.bloomSize, tgt.bloomSize + energy * 0.5, sm);
+  cur.coreGlow = lerp(cur.coreGlow, tgt.coreGlow + energy * 0.4, sm);
+  cur.bloomSize = lerp(cur.bloomSize, tgt.bloomSize + energy * 0.6, sm);
   cur.pc = lerpA(cur.pc, tgt.particleColor, sm);
+  cur.breathe = lerp(cur.breathe, tgt.breathe, sm);
+  cur.ringCount = lerp(cur.ringCount, tgt.ringCount, sm);
 
   // Energy
   if (state === 'speaking') energyTarget = synthEnergy(t);
   else if (state !== 'listening') energyTarget = 0;
   energy = lerp(energy, energyTarget, energyTarget > energy ? 0.22 : 0.04);
 
+  // Breathing pulse (strongest in listening)
+  const breathPulse = Math.sin(t * 3) * cur.breathe;
+
   // Clear
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, W, H);
 
-  // ── AMBIENT GLOW (large soft background bloom) ──
+  const cc = cur.core;
+  const cg = cur.coreGlow;
+
+  // ── OUTER HALO (very large, subtle) ──
+  const haloR = R * (cur.bloomSize + 0.8);
+  const haloGrad = ctx.createRadialGradient(CX, CY, R * 0.8, CX, CY, haloR);
+  haloGrad.addColorStop(0, `rgba(${cur.glow[0]},${cur.glow[1]},${cur.glow[2]},${0.06 + energy * 0.08 + breathPulse})`);
+  haloGrad.addColorStop(0.5, `rgba(${cur.glow[0]},${cur.glow[1]},${cur.glow[2]},${0.02 + energy * 0.03})`);
+  haloGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = haloGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── AMBIENT GLOW (inner bloom) ──
   const ambR = R * cur.bloomSize;
   const ambGrad = ctx.createRadialGradient(CX, CY, 0, CX, CY, ambR);
-  ambGrad.addColorStop(0, `rgba(${cur.glow[0]},${cur.glow[1]},${cur.glow[2]},${0.12 + energy * 0.15})`);
-  ambGrad.addColorStop(0.4, `rgba(${cur.glow[0]},${cur.glow[1]},${cur.glow[2]},${0.04 + energy * 0.06})`);
+  ambGrad.addColorStop(0, `rgba(${cur.glow[0]},${cur.glow[1]},${cur.glow[2]},${0.2 + energy * 0.2 + breathPulse * 2})`);
+  ambGrad.addColorStop(0.35, `rgba(${cur.glow[0]},${cur.glow[1]},${cur.glow[2]},${0.08 + energy * 0.1})`);
+  ambGrad.addColorStop(0.7, `rgba(${cur.glow[0]},${cur.glow[1]},${cur.glow[2]},${0.02 + energy * 0.04})`);
   ambGrad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = ambGrad;
   ctx.fillRect(0, 0, W, H);
 
-  // ── CORE ORB (radial gradient sphere) ──
+  // ── CORE ORB (brighter, more vivid) ──
   const coreGrad = ctx.createRadialGradient(
-    CX - R * 0.15, CY - R * 0.15, R * 0.05,
+    CX - R * 0.12, CY - R * 0.12, R * 0.02,
     CX, CY, R * 0.95
   );
-  const cg = cur.coreGlow;
-  const cc = cur.core;
-  coreGrad.addColorStop(0, `rgba(${Math.min(255,cc[0]+100)},${Math.min(255,cc[1]+100)},${Math.min(255,cc[2]+100)},${0.15 + cg * 0.25})`);
-  coreGrad.addColorStop(0.3, `rgba(${cc[0]},${cc[1]},${cc[2]},${0.08 + cg * 0.15})`);
-  coreGrad.addColorStop(0.7, `rgba(${Math.floor(cc[0]*0.5)},${Math.floor(cc[1]*0.5)},${Math.floor(cc[2]*0.5)},${0.05 + cg * 0.1})`);
+  coreGrad.addColorStop(0, `rgba(${Math.min(255,cc[0]+120)},${Math.min(255,cc[1]+120)},${Math.min(255,cc[2]+120)},${0.25 + cg * 0.35 + breathPulse * 3})`);
+  coreGrad.addColorStop(0.25, `rgba(${cc[0]},${cc[1]},${cc[2]},${0.15 + cg * 0.2})`);
+  coreGrad.addColorStop(0.6, `rgba(${Math.floor(cc[0]*0.6)},${Math.floor(cc[1]*0.6)},${Math.floor(cc[2]*0.6)},${0.08 + cg * 0.12})`);
   coreGrad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = coreGrad;
   ctx.beginPath();
-  ctx.arc(CX, CY, R * 1.0, 0, Math.PI * 2);
+  ctx.arc(CX, CY, R * 1.05, 0, Math.PI * 2);
   ctx.fill();
 
-  // ── WAVE LAYERS (the main visual) ──
-  ctx.save();
-  ctx.globalCompositeOperation = 'lighter'; // Additive blending = GLOW
+  // ── ENERGY RINGS (during processing) ──
+  if (cur.ringCount > 0.3) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const rings = Math.round(cur.ringCount);
+    for (let r = 1; r <= rings; r++) {
+      const ringPhase = t * (1.5 + r * 0.5);
+      const ringExpand = (Math.sin(ringPhase) * 0.5 + 0.5);
+      const ringR = R * (1.05 + ringExpand * 0.35 * r);
+      const ringAlpha = (1 - ringExpand) * 0.25 * (cur.ringCount / 3);
 
-  // Get wave colors from current state (interpolate)
+      ctx.beginPath();
+      ctx.arc(CX, CY, ringR, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${cc[0]},${cc[1]},${cc[2]},${ringAlpha})`;
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = `rgba(${cc[0]},${cc[1]},${cc[2]},${ringAlpha * 2})`;
+      ctx.shadowBlur = 20;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+    ctx.restore();
+  }
+
+  // ── WAVE LAYERS ──
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+
   const tgtWC = tgt.waveColors;
 
   waveLayers.forEach((layer, i) => {
-    // Pick color from the state's wave color palette
     const colorIdx = i % tgtWC.length;
     const wc = tgtWC[colorIdx];
-
-    // Smooth color (simple approach: use target directly since layers are many)
     const color = [wc[0], wc[1], wc[2]];
-    const alpha = wc[3] * (0.5 + energy * 1.5);
+    const alpha = wc[3] * (0.6 + energy * 1.8 + breathPulse * 4);
 
-    layer.draw(ctx, t, CX, CY, R, cur.waveAmp, cur.spikeAmp, color, alpha, cur.waveSpeed);
+    layer.draw(ctx, t, CX, CY, R, cur.waveAmp + breathPulse, cur.spikeAmp, color, alpha, cur.waveSpeed);
   });
 
-  // ── EXTRA: Bright equatorial band during speaking ──
-  if (energy > 0.01) {
-    const bandAlpha = energy * 0.6;
+  // ── EQUATORIAL BAND (bright accent ring) ──
+  if (energy > 0.005) {
+    const bandAlpha = energy * 0.8;
     ctx.beginPath();
     const bandSteps = 300;
     for (let i = 0; i <= bandSteps; i++) {
       const pct = i / bandSteps;
       const angle = pct * Math.PI * 2;
-      const wave = Math.sin(angle * 8 + t * 4) * energy * 0.15
-                 + Math.sin(angle * 13 - t * 6) * energy * 0.08
-                 + Math.sin(angle * 21 + t * 9) * energy * 0.04;
+      const wave = Math.sin(angle * 8 + t * 4) * energy * 0.18
+                 + Math.sin(angle * 13 - t * 6) * energy * 0.1
+                 + Math.sin(angle * 21 + t * 9) * energy * 0.05;
       const r = R * (1 + wave);
       const x = CX + Math.cos(angle) * r;
       const y = CY + Math.sin(angle) * r * 0.08;
       if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
     ctx.closePath();
-    ctx.strokeStyle = `rgba(255,255,255,${bandAlpha * 0.4})`;
-    ctx.lineWidth = 2 + energy * 4;
+    ctx.strokeStyle = `rgba(255,255,255,${bandAlpha * 0.5})`;
+    ctx.lineWidth = 2.5 + energy * 5;
     ctx.shadowColor = `rgba(${cc[0]},${cc[1]},${cc[2]},${bandAlpha})`;
-    ctx.shadowBlur = 25 + energy * 40;
+    ctx.shadowBlur = 35 + energy * 50;
     ctx.stroke();
     ctx.shadowBlur = 0;
   }
@@ -420,22 +417,17 @@ function draw(timestamp) {
     p.draw(ctx, CX, CY, R, cur.pc);
   });
 
-  ctx.restore(); // Back to 'source-over'
+  ctx.restore();
 
-  // ── EDGE HIGHLIGHT (thin bright rim) ──
+  // ── EDGE HIGHLIGHT (vivid rim) ──
   ctx.beginPath();
   ctx.arc(CX, CY, R * 0.98, 0, Math.PI * 2);
-  ctx.strokeStyle = `rgba(${cc[0]},${cc[1]},${cc[2]},${0.04 + energy * 0.08})`;
-  ctx.lineWidth = 1;
-  ctx.shadowColor = `rgba(${Math.min(255,cc[0]+80)},${Math.min(255,cc[1]+80)},${Math.min(255,cc[2]+80)},${0.3})`;
-  ctx.shadowBlur = 10 + energy * 15;
+  ctx.strokeStyle = `rgba(${cc[0]},${cc[1]},${cc[2]},${0.08 + energy * 0.12 + breathPulse * 2})`;
+  ctx.lineWidth = 1.5;
+  ctx.shadowColor = `rgba(${Math.min(255,cc[0]+100)},${Math.min(255,cc[1]+100)},${Math.min(255,cc[2]+100)},${0.5})`;
+  ctx.shadowBlur = 15 + energy * 25;
   ctx.stroke();
   ctx.shadowBlur = 0;
-
-  // ── BREATHING SCALE ── (apply via slight radius modulation — already in R)
-
-  // ── TECH LABELS ──
-  updateTechLabels(t);
 }
 
 requestAnimationFrame(draw);
@@ -447,10 +439,10 @@ requestAnimationFrame(draw);
 const stateLabel = document.getElementById('stateLabel');
 const txBox = document.getElementById('transcript');
 const labelColors = {
-  idle:       'rgba(0,102,255,0.5)',
-  listening:  'rgba(0,255,136,0.6)',
-  processing: 'rgba(170,0,255,0.6)',
-  speaking:   'rgba(255,176,0,0.6)',
+  idle:       'rgba(0,140,255,0.7)',
+  listening:  'rgba(0,255,160,0.8)',
+  processing: 'rgba(190,60,255,0.8)',
+  speaking:   'rgba(255,200,0,0.85)',
 };
 
 function setState(s) {
@@ -462,7 +454,7 @@ function setState(s) {
 window.setState = setState;
 
 function showTx(who, text) {
-  document.getElementById('txWho').textContent = who === 'user' ? 'YOU' : 'RAZOR';
+  document.getElementById('txWho').textContent = who === 'user' ? 'YOU' : '';
   document.getElementById('txWho').style.color = who === 'user' ? '#64FFDA' : '#CE93D8';
   document.getElementById('txText').textContent = text;
   txBox.classList.add('show');
@@ -485,79 +477,44 @@ function stopLE() { clearInterval(lTimer); lTimer = null; energyTarget = 0; }
 // ═══════════════════════════════════════════════════════
 
 async function runDemo() {
-  const btn = document.getElementById('demoBtn');
-  btn.classList.add('on'); btn.textContent = '● LIVE';
-
   setState('idle'); hideTx(); await wait(2000);
 
-  // Wake word
   setState('listening'); startLE(); await wait(500);
-  showTx('user', '"Hey Razor..."'); await wait(2200);
   showTx('user', '"What deals should I prioritize this week?"');
   await wait(3000); stopLE();
 
-  // Processing
   setState('processing');
-  showTx('razor', 'Pulling Salesforce pipeline data...'); await wait(2500);
+  showTx('system', 'Pulling pipeline data...'); await wait(2500);
 
-  // Razor speaks
   setState('speaking');
-  showTx('razor', '"3 deals closing Friday — $127K total. UnifyGTM at $85K is your biggest. Start there."');
+  showTx('system', '"3 deals closing Friday. UnifyGTM at $85K is your biggest. Start there."');
   await wait(6500);
 
-  // Follow-up
   setState('listening'); startLE(); await wait(600);
   showTx('user', '"Coach me on the Bandwidth follow-up"');
   await wait(2800); stopLE();
 
-  // Processing
   setState('processing');
-  showTx('razor', 'Pulling SalesLoft sequence & Fellow notes...'); await wait(2000);
+  showTx('system', 'Pulling sequence and notes...'); await wait(2000);
 
-  // Coach response
   setState('speaking');
-  showTx('razor', '"They asked for a case study you haven\'t sent. Lead with that. Your talk ratio was 68% — listen more this time."');
+  showTx('system', '"They asked for a case study you haven\'t sent. Lead with that. Listen more this time."');
   await wait(7000);
 
-  // Return to idle
   setState('idle'); hideTx(); await wait(2500);
 
-  // Proactive alert
   setState('speaking'); await wait(300);
-  showTx('razor', '"Heads up — Sarah from Acme just replied to your cold email. Gmail shows positive sentiment."');
+  showTx('system', '"Heads up \u2014 Sarah from Acme just replied to your cold email. Positive sentiment."');
   await wait(5500);
 
   setState('idle'); await wait(1200); hideTx();
-  btn.classList.remove('on'); btn.textContent = '▶ DEMO';
 }
 window.runDemo = runDemo;
 
 // ═══════════════════════════════════════════════════════
-//  DEMO TOGGLE
+//  LIVE WEBSOCKET (connects to bridge if running)
 // ═══════════════════════════════════════════════════════
 let _ws = null;
-
-function updateDemoToggle(enabled) {
-  const btn = document.getElementById('demoToggle');
-  if (!btn) return;
-  btn.textContent = enabled ? 'DEMO: ON' : 'DEMO: OFF';
-  if (enabled) {
-    btn.classList.add('on');
-  } else {
-    btn.classList.remove('on');
-  }
-}
-
-function toggleDemo() {
-  if (_ws && _ws.readyState === WebSocket.OPEN) {
-    _ws.send(JSON.stringify({ type: 'toggleDemo' }));
-  }
-}
-window.toggleDemo = toggleDemo;
-
-// ═══════════════════════════════════════════════════════
-//  LIVE WEBSOCKET (connects to Razor bridge if running)
-// ═══════════════════════════════════════════════════════
 (function tryWS() {
   try {
     const ws = new WebSocket('ws://localhost:3333');
@@ -572,11 +529,9 @@ window.toggleDemo = toggleDemo;
       if (m.type==='state') setState(map[m.state]||'idle');
       if (m.type==='snapshot') {
         setState(map[m.state]||'idle');
-        if (m.demoEnabled !== undefined) updateDemoToggle(m.demoEnabled);
       }
       if (m.type==='energy') energyTarget = m.rms * 2.5;
       if (m.type==='transcript') showTx(m.speaker, m.text);
-      if (m.type==='demoState') updateDemoToggle(m.enabled);
     };
     ws.onclose = () => { _ws = null; setTimeout(tryWS, 3000); };
     ws.onerror = () => {};
