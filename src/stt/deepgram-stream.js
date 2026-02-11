@@ -47,6 +47,20 @@ class DeepgramStream extends EventEmitter {
       channels: String(config.audio.channels),
     });
 
+    // Domain-specific keyword boosting — helps nova-2 recognize sales/CRM terms
+    const KEYWORDS = [
+      'pipeline', 'cadences', 'action items', 'meetings', 'priorities',
+      'overdue', 'salesforce', 'calendar', 'deals', 'leads',
+      'contacts', 'accounts', 'opportunities', 'forecast',
+      'tasks', 'follow-ups', 'emails', 'calls', 'demos',
+      'proposals', 'contracts', 'quotas', 'metrics',
+      'revenue', 'ACV', 'MRR', 'churn', 'conversion',
+      'outreach', 'sequences', 'touchpoints', 'engagement', 'CRM',
+    ];
+    for (const kw of KEYWORDS) {
+      params.append('keywords', `${kw}:1.5`);
+    }
+
     const url = `wss://api.deepgram.com/v1/listen?${params}`;
 
     return new Promise((resolve, reject) => {

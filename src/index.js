@@ -595,8 +595,9 @@ async function dispatchAction(action) {
         if (integrations.fellow) {
           const meetings = await integrations.fellow.getTodaysMeetings();
           if (!meetings?.length) return "No meetings scheduled for today.";
-          const names = meetings.slice(0, 3).map(m => m.title).join(", ");
-          return `You have ${meetings.length} meeting${meetings.length > 1 ? "s" : ""} today including ${names}`;
+          const out = _formatTodayMeetingsForTTS(meetings);
+          if (out.length > 100) log.error(`[TodayMeetings TTS] Output exceeds 100 chars (${out.length}): "${out}"`);
+          return out;
         }
         return "Fellow not connected.";
       }
@@ -1203,6 +1204,84 @@ function fmtTime(e) {
   return new Date(e.start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
+// ── Format calendar events for TTS — hard cap at 100 chars ──
+const CAL_TTS_MAX = 100;
+
+function _formatCalendarForTTS(events) {
+  if (!events || events.length === 0) return "You're clear, no meetings.";
+
+  const n = events.length;
+
+  // Try showing 2 events: "[name] at [time] and [name] at [time]"
+  // then fall back to 1 event + "and X more", then just count
+  if (n === 1) {
+    const name = shortName(events[0].summary);
+    const time = fmtTime(events[0]);
+    const full = `You have ${name} at ${time}.`;
+    if (full.length <= CAL_TTS_MAX) return full;
+    // Truncate event name to fit
+    const shell = `You have  at ${time}.`;
+    const budget = CAL_TTS_MAX - shell.length;
+    return `You have ${name.slice(0, budget)} at ${time}.`;
+  }
+
+  if (n === 2) {
+    const n1 = shortName(events[0].summary), t1 = fmtTime(events[0]);
+    const n2 = shortName(events[1].summary), t2 = fmtTime(events[1]);
+    const full = `You have ${n1} at ${t1} and ${n2} at ${t2}.`;
+    if (full.length <= CAL_TTS_MAX) return full;
+  }
+
+  // Try: first event + "and X more meetings"
+  {
+    const name = shortName(events[0].summary);
+    const time = fmtTime(events[0]);
+    const more = n - 1;
+    const full = `You have ${name} at ${time} and ${more} more meeting${more > 1 ? 's' : ''}.`;
+    if (full.length <= CAL_TTS_MAX) return full;
+    // Truncate name to fit
+    const shell = `You have  at ${time} and ${more} more meeting${more > 1 ? 's' : ''}.`;
+    const budget = CAL_TTS_MAX - shell.length;
+    if (budget > 5) return `You have ${name.slice(0, budget)} at ${time} and ${more} more meeting${more > 1 ? 's' : ''}.`;
+  }
+
+  // Ultimate fallback: just the count
+  return `You have ${n} meetings.`;
+}
+
+// ── Format today's meetings (Fellow) for TTS — hard cap at 100 chars ──
+function _formatTodayMeetingsForTTS(meetings) {
+  if (!meetings || meetings.length === 0) return 'No meetings scheduled for today.';
+
+  const n = meetings.length;
+  const name = (i) => shortName(meetings[i]?.title);
+
+  if (n === 1) {
+    const full = `Today you have ${name(0)}.`;
+    if (full.length <= CAL_TTS_MAX) return full;
+    const budget = CAL_TTS_MAX - 'Today you have .'.length;
+    return `Today you have ${name(0).slice(0, budget)}.`;
+  }
+
+  // Try 2 meetings
+  if (n === 2) {
+    const full = `Today you have ${name(0)} and ${name(1)}.`;
+    if (full.length <= CAL_TTS_MAX) return full;
+  }
+
+  // Try first meeting + "and X more"
+  {
+    const more = n - 1;
+    const full = `Today you have ${name(0)} and ${more} more meeting${more > 1 ? 's' : ''}.`;
+    if (full.length <= CAL_TTS_MAX) return full;
+    const shell = `Today you have  and ${more} more meeting${more > 1 ? 's' : ''}.`;
+    const budget = CAL_TTS_MAX - shell.length;
+    if (budget > 5) return `Today you have ${name(0).slice(0, budget)} and ${more} more meeting${more > 1 ? 's' : ''}.`;
+  }
+
+  return `Today you have ${n} meetings.`;
+}
+
 // ── Format raw integration data into speakable text ──
 function formatDataForSpeech(actionType, data) {
   if (!data) return null;
@@ -1218,13 +1297,9 @@ function formatDataForSpeech(actionType, data) {
   if (actionType === 'check_calendar' || actionType === 'get_calendar' || actionType === 'get_schedule') {
     const events = data.calendarEvents || data.events || (Array.isArray(data) ? data : null);
     if (events) {
-      if (events.length === 0) return "You're clear, no meetings.";
-      const first = events[0];
-      const time = fmtTime(first);
-      if (events.length === 1) {
-        return truncateForTTS(`One meeting: ${shortName(first.summary)} at ${time}.`);
-      }
-      return truncateForTTS(`${events.length} meetings. First: ${shortName(first.summary)} at ${time}.`);
+      const out = _formatCalendarForTTS(events);
+      if (out.length > 100) log.error(`[Calendar TTS] Output exceeds 100 chars (${out.length}): "${out}"`);
+      return out;
     }
   }
 

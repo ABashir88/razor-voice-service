@@ -74,7 +74,7 @@ class VoicePipeline extends EventEmitter {
     // ── Timers ──
     this.commandTimeout = null;
     this.sentenceTimer = null;
-    this.commandTimeoutMs = 8000; // safety cap — endpointing handles fast finalization
+    this.commandTimeoutMs = 10000; // safety cap — endpointing handles fast finalization
 
     // ── Attention: 5-minute awake window after any interaction ──
     // Managed by attention singleton (src/pipeline/attention.js)
@@ -645,10 +645,11 @@ class VoicePipeline extends EventEmitter {
       return;
     }
 
-    // Replay buffered audio from just before wake detection.
-    // This is the key to one-breath commands: the ring buffer captured
-    // "what's on my calendar" even though STT wasn't open yet.
-    const replayChunks = this._drainAudioRingSince(this._wakeTimestamp - 200);
+    // Replay buffered audio from well before wake detection.
+    // Porcupine fires AFTER hearing the full wake word, so the user's
+    // command onset can be 300-500ms earlier. Replay 700ms of pre-wake
+    // audio to ensure Deepgram captures the first syllable.
+    const replayChunks = this._drainAudioRingSince(this._wakeTimestamp - 700);
     if (replayChunks.length > 0) {
       log.info(`Replaying ${replayChunks.length} buffered audio chunks into STT`);
       for (const chunk of replayChunks) {
