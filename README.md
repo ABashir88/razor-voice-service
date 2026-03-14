@@ -8,21 +8,21 @@ The project explores the architecture behind modern voice AI assistants, convers
 
 The system integrates modern voice infrastructure providers such as Deepgram, Telnyx, and ElevenLabs to replicate the types of pipelines commonly used in production conversational AI platforms.
 
-Key capabilities demonstrated:
+Key Capabilities
 
-streaming speech recognition (STT)
+Streaming speech recognition (STT)
 
-wake word detection
+Wake word detection
 
-real-time voice activity detection (VAD)
+Real-time voice activity detection (VAD)
 
-interruption (barge-in) handling
+Interruption / barge-in handling
 
-dynamic TTS pacing
+Dynamic TTS pacing
 
 Bluetooth device monitoring
 
-low-latency conversational voice pipeline orchestration
+Low-latency conversational voice pipeline orchestration
 
 This project is intended as an architecture exploration of voice AI pipelines, not a production voice assistant.
 
@@ -30,46 +30,46 @@ Architecture
 ┌──────────────────────────────────────────────────────────────┐
 │                     Voice Pipeline                           │
 │                                                              │
-│  ┌─────────┐   ┌─────┐   ┌───────────┐   ┌──────────────┐  │
-│  │Bluetooth│──▶│ Mic │──▶│    VAD    │──▶│  Wake Word   │  │
-│  │ Monitor │   │ Sox │   │ (energy)  │   │  Detector    │  │
-│  └─────────┘   └─────┘   └───────────┘   └──────┬───────┘  │
-│                   ▲                              │           │
-│                   │                              ▼           │
-│  ┌─────────────┐  │  ┌────────────┐   ┌─────────────────┐  │
-│  │ Interruption│  │  │  Deepgram  │◀──│   Command       │  │
-│  │  Handler    │──┘  │ Stream STT │   │   Capture       │  │
-│  └──────┬──────┘     └─────┬──────┘   └─────────────────┘  │
-│         │                  │                                 │
-│         ▼                  ▼                                 │
-│  ┌─────────────┐   ┌────────────┐                           │
-│  │   afplay    │◀──│ TTS Engine │◀── pipeline.speak()       │
-│  │ (speakers)  │   │Telnyx/11L  │                           │
-│  └─────────────┘   └────────────┘                           │
+│  ┌─────────┐   ┌─────┐   ┌───────────┐   ┌──────────────┐     │
+│  │Bluetooth│──▶│ Mic │──▶│    VAD    │──▶│  Wake Word   │     │
+│  │ Monitor │   │ Sox │   │ (energy)  │   │  Detector    │     │
+│  └─────────┘   └─────┘   └───────────┘   └──────┬───────┘     │
+│                   ▲                              │             │
+│                   │                              ▼             │
+│  ┌─────────────┐  │  ┌────────────┐   ┌─────────────────┐     │
+│  │ Interruption│  │  │  Deepgram  │◀──│   Command       │     │
+│  │  Handler    │──┘  │ Stream STT │   │   Capture       │     │
+│  └──────┬──────┘     └─────┬──────┘   └─────────────────┘     │
+│         │                  │                                   │
+│         ▼                  ▼                                   │
+│  ┌─────────────┐   ┌────────────┐                             │
+│  │   afplay    │◀──│ TTS Engine │◀── pipeline.speak()         │
+│  │ (speakers)  │   │Telnyx/11L  │                             │
+│  └─────────────┘   └────────────┘                             │
 └──────────────────────────────────────────────────────────────┘
+Voice Loop
+Audio Input → VAD → Wake Word Detection → STT → Command Processing → TTS → Playback
 
-This architecture demonstrates a real-time conversational voice loop:
-
-Audio Input → Voice Activity Detection → Wake Word Detection → Speech Recognition → Command Processing → Text-to-Speech → Playback
-
-The pipeline continuously cycles through listening and response states while supporting interruption detection and feedback loop prevention.
+The pipeline continuously cycles between listening and responding while supporting interruption detection and feedback-loop prevention.
 
 Voice Pipeline State Machine
 IDLE → LISTENING → PROCESSING → SPEAKING → LISTENING
             ▲                        │
             └──── (interruption) ────┘
 
-The pipeline operates as a simple conversational state machine that:
+Pipeline behavior:
 
-Waits for voice input
+Wait for voice input
 
-Detects the wake word
+Detect wake word
 
-Captures and processes speech commands
+Capture spoken command
 
-Synthesizes spoken responses
+Process command
 
-Handles user interruptions during playback
+Generate spoken response
+
+Allow interruption during playback
 
 Setup
 Prerequisites (macOS)
@@ -81,7 +81,7 @@ microphone capture
 
 Bluetooth device monitoring
 
-audio input/output switching
+audio device switching
 
 Install
 cd /Users/alrazi/razor-voice-service
@@ -89,59 +89,49 @@ npm install
 cp .env.example .env
 npm run setup
 
-The setup script verifies required dependencies and environment configuration.
+The setup script verifies dependencies and environment configuration.
 
 Configure .env
-
-Required API keys:
-
+Required API Keys
 DEEPGRAM_API_KEY
 TELNYX_API_KEY
 
 or
 
 ELEVENLABS_API_KEY
-
-Optional:
-
+Optional
 PORCUPINE_ACCESS_KEY
 
-This enables on-device wake word detection using Picovoice Porcupine.
+Enables on-device wake word detection using Picovoice Porcupine.
 
 Run
 
-Start the voice pipeline:
+Start the pipeline:
 
 npm start
 
-Development mode with auto-reload:
+Development mode:
 
 npm run dev
 Test Individual Components
-
-Bluetooth connectivity:
-
+Bluetooth Connectivity
 npm run test:bluetooth
-
-Microphone capture + VAD visualization:
-
+Microphone + VAD Visualization
 npm run test:mic
-
-TTS synthesis + playback:
-
+TTS + Playback
 npm run test:playback
 
 These scripts validate each stage of the audio pipeline independently.
 
 Wake Word Detection
 
-The system supports two wake-word strategies.
+Two strategies are supported.
 
 1. VAD + Transcript Fallback (Default)
 
 Pipeline:
 
-Mic → Voice Activity Detection → Deepgram Batch STT → Keyword Detection
+Mic → VAD → Deepgram STT → Keyword Detection
 
 Characteristics:
 
@@ -151,7 +141,7 @@ Uses transcription to detect wake word
 
 ~500ms latency
 
-2. Porcupine On-Device Wake Word
+2. Porcupine On-Device Detection
 
 When PORCUPINE_ACCESS_KEY is configured:
 
@@ -161,34 +151,32 @@ real-time keyword detection
 
 fully on-device processing
 
-Custom keywords can be trained using:
+Train custom keywords at:
 
 https://console.picovoice.ai
 
-Place the .ppn model file here:
+Place the model file here:
 
 models/razor_mac.ppn
 Interruption Handling (Barge-In)
 
-During speech playback:
+During playback:
 
-Microphone input is muted to prevent feedback
+Microphone is muted to prevent feedback
 
 Interruption handler monitors raw audio energy
 
-If user speech is detected:
+If speech is detected:
 
-playback is immediately stopped
-
-microphone is unmuted
-
-pipeline returns to listening state
+kill playback immediately
+unmute microphone
+return to listening state
 
 This replicates barge-in behavior used in conversational voice assistants.
 
 Feedback Loop Prevention
 
-To prevent speaker audio from triggering the microphone:
+To prevent speaker output from triggering the microphone:
 
 Mic mutes when playback begins
 
@@ -197,9 +185,6 @@ Mic unmutes 300ms after playback ends
 Configurable via:
 
 PLAYBACK_MUTE_BUFFER_MS
-
-This buffer absorbs residual speaker audio captured by the Bluetooth microphone.
-
 Bluetooth Monitoring
 
 The system monitors the Ortizan X8 Pro Bluetooth microphone.
@@ -214,12 +199,9 @@ automatic macOS audio routing
 
 event-driven pipeline pause/resume
 
-This simulates device monitoring behavior used in real-time voice applications.
+This simulates device monitoring used in real-time voice systems.
 
 Dynamic Speech Pacing
-
-TTS responses adjust delivery speed based on context.
-
 Pace	Speed	Pitch	Use Case
 urgent	1.15×	+2st	alerts
 normal	1.0×	+0st	default
@@ -253,7 +235,7 @@ src/
     └── test-bluetooth.js
 Purpose of the Project
 
-This repository is part of an ongoing exploration into AI-powered voice systems and real-time conversational infrastructure.
+This repository explores AI-powered voice systems and real-time conversational infrastructure.
 
 It demonstrates how modern voice AI stacks combine:
 
@@ -267,4 +249,4 @@ synthetic voice generation
 
 to create responsive conversational agents.
 
-The goal is to better understand the architecture patterns behind modern voice AI systems used across conversational AI platforms, AI assistants, and voice-enabled applications.
+The goal is to better understand architecture patterns behind modern voice AI systems used across conversational AI platforms, AI assistants, and voice-enabled applications.
